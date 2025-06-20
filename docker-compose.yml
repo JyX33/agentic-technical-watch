@@ -1,0 +1,123 @@
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: reddit_watcher
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for A2A service discovery and caching
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # A2A Agent Services
+  retrieval-agent:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
+      - REDIS_URL=redis://redis:6379/0
+      - AGENT_TYPE=retrieval
+      - AGENT_PORT=8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "reddit_watcher.agents.retrieval"]
+
+  filter-agent:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
+      - REDIS_URL=redis://redis:6379/0
+      - AGENT_TYPE=filter
+      - AGENT_PORT=8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "reddit_watcher.agents.filtering"]
+
+  summarise-agent:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
+      - REDIS_URL=redis://redis:6379/0
+      - AGENT_TYPE=summarise
+      - AGENT_PORT=8003
+    ports:
+      - "8003:8003"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "reddit_watcher.agents.summarise"]
+
+  alert-agent:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
+      - REDIS_URL=redis://redis:6379/0
+      - AGENT_TYPE=alert
+      - AGENT_PORT=8004
+    ports:
+      - "8004:8004"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "reddit_watcher.agents.alerting"]
+
+  coordinator-agent:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
+      - REDIS_URL=redis://redis:6379/0
+      - AGENT_TYPE=coordinator
+      - AGENT_PORT=8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      retrieval-agent:
+        condition: service_started
+      filter-agent:
+        condition: service_started
+      summarise-agent:
+        condition: service_started
+      alert-agent:
+        condition: service_started
+    command: ["python", "-m", "reddit_watcher.agents.coordinator"]
+
+volumes:
+  postgres_data:
+  redis_data:
