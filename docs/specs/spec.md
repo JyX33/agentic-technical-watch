@@ -134,7 +134,7 @@ AlertAgent (Slack/Email delivery)
 
 ```json
 {
-  "name": "FilterAgent", 
+  "name": "FilterAgent",
   "description": "Content relevance filtering",
   "endpoint": "http://filter:8002",
   "capabilities": [
@@ -148,7 +148,7 @@ AlertAgent (Slack/Email delivery)
       }
     },
     {
-      "name": "semanticFilter", 
+      "name": "semanticFilter",
       "description": "Filter using semantic similarity",
       "parameters": {
         "content_items": "array",
@@ -174,7 +174,7 @@ AlertAgent (Slack/Email delivery)
 def calculate_relevance_score(content, topic):
     keyword_score = keyword_match_score(content, TOPIC_KEYWORDS)
     semantic_score = cosine_similarity(
-        embed_text(content), 
+        embed_text(content),
         embed_text(TOPIC_DESCRIPTION)
     )
     return 0.4 * keyword_score + 0.6 * semantic_score
@@ -190,7 +190,7 @@ def calculate_relevance_score(content, topic):
 {
   "name": "SummariseAgent",
   "description": "AI-powered content summarization",
-  "endpoint": "http://summarise:8003", 
+  "endpoint": "http://summarise:8003",
   "capabilities": [
     {
       "name": "summarizeContent",
@@ -225,7 +225,7 @@ def calculate_relevance_score(content, topic):
 **Prompt Engineering**:
 
 ```
-Summarize this Reddit discussion about [TOPIC] in 2-3 sentences. 
+Summarize this Reddit discussion about [TOPIC] in 2-3 sentences.
 Focus on: key insights, questions raised, community sentiment.
 Content: [CONTENT]
 ```
@@ -239,7 +239,7 @@ Content: [CONTENT]
 ```json
 {
   "name": "AlertAgent",
-  "description": "Multi-channel notification delivery", 
+  "description": "Multi-channel notification delivery",
   "endpoint": "http://alert:8004",
   "capabilities": [
     {
@@ -255,7 +255,7 @@ Content: [CONTENT]
       "name": "sendEmail",
       "description": "Send HTML email notification",
       "parameters": {
-        "summaries": "array", 
+        "summaries": "array",
         "recipients": "array",
         "subject": "string"
       }
@@ -286,7 +286,7 @@ Content: [CONTENT]
 CoordinatorAgent creates task:
 {
   "id": "task_001_fetch",
-  "type": "fetchPosts", 
+  "type": "fetchPosts",
   "parameters": {"topic": "Claude Code", "limit": 50},
   "context_id": "cycle_2025_001",
   "created_at": "2025-06-20T10:00:00Z"
@@ -325,7 +325,7 @@ RetrievalAgent processes and responds:
 
 ```json
 {
-  "task_id": "task_003_summarize", 
+  "task_id": "task_003_summarize",
   "status": "partial_success",
   "result": {
     "successful_summaries": 15,
@@ -346,7 +346,7 @@ redis_client.hset(
     "agent:registry",
     "RetrievalAgent",
     json.dumps({
-        "endpoint": "http://retrieval:8001", 
+        "endpoint": "http://retrieval:8001",
         "health_check": "/health",
         "last_seen": "2025-06-20T10:00:00Z",
         "capabilities": [...]
@@ -456,17 +456,17 @@ def search_reddit_content(topic, timeframe="day"):
     global_posts = reddit.subreddit("all").search(
         topic, time_filter=timeframe, limit=25
     )
-    
-    # 2. Targeted subreddit monitoring  
+
+    # 2. Targeted subreddit monitoring
     targeted_posts = []
     for sub in MONITORED_SUBREDDITS:
         targeted_posts.extend(
             reddit.subreddit(sub).new(limit=10)
         )
-    
+
     # 3. Subreddit discovery
     discovered_subs = reddit.subreddits.search(topic, limit=5)
-    
+
     return combine_and_deduplicate(global_posts, targeted_posts)
 ```
 
@@ -532,13 +532,13 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    
+
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-      
+
   coordinator:
     build: .
     command: python -m reddit_watcher.agents.coordinator
@@ -546,20 +546,20 @@ services:
       - AGENT_TYPE=coordinator
       - A2A_PORT=8000
     depends_on: [postgres, redis]
-    
+
   retrieval:
     build: .
-    command: python -m reddit_watcher.agents.retrieval  
+    command: python -m reddit_watcher.agents.retrieval
     environment:
       - AGENT_TYPE=retrieval
       - A2A_PORT=8001
     depends_on: [postgres, redis]
-    
+
   # ... other agents
-    
+
   nginx:
     image: nginx:alpine
-    ports: 
+    ports:
       - "443:443"
       - "80:80"
     volumes:
@@ -579,10 +579,10 @@ upstream coordinator_backend {
 server {
     listen 443 ssl;
     server_name coordinator.reddit-watcher.local;
-    
+
     ssl_certificate /etc/ssl/certs/cert.pem;
     ssl_certificate_key /etc/ssl/certs/key.pem;
-    
+
     location / {
         proxy_pass http://coordinator_backend;
         proxy_set_header Host $host;
@@ -599,7 +599,7 @@ def validate_a2a_request(request):
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise AuthenticationError("Missing or invalid authorization")
-    
+
     token = auth_header[7:]  # Remove "Bearer "
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
@@ -646,7 +646,7 @@ async def health_check():
     return {
         "status": "healthy",
         "agent": "RetrievalAgent",
-        "version": "1.0.0", 
+        "version": "1.0.0",
         "last_task": "2025-06-20T09:58:00Z",
         "dependencies": {
             "reddit_api": await check_reddit_connection(),
@@ -688,7 +688,7 @@ async def health_check():
 **Common Issues**:
 
 - **Agent Discovery Failures**: Check Redis connectivity and agent registration
-- **Reddit API Errors**: Verify OAuth credentials and rate limit status  
+- **Reddit API Errors**: Verify OAuth credentials and rate limit status
 - **Gemini API Failures**: Check API key validity and quota usage
 - **Task Timeouts**: Review agent performance and resource constraints
 
@@ -700,9 +700,9 @@ curl -s https://coordinator.reddit-watcher.local/health | jq
 
 # View recent tasks
 docker exec postgres psql -U reddit_watcher -c "
-  SELECT task_type, status, created_at 
-  FROM agent_tasks 
-  ORDER BY created_at DESC 
+  SELECT task_type, status, created_at
+  FROM agent_tasks
+  ORDER BY created_at DESC
   LIMIT 10;"
 
 # Monitor agent logs
