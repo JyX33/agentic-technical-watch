@@ -5,12 +5,14 @@ Get up and running with Reddit Technical Watcher operations in 15 minutes.
 ## Prerequisites
 
 **System Access:**
+
 - VPN connection to company network
 - SSH access to production servers
 - Access to monitoring dashboards
 - Slack workspace membership
 
 **Required Accounts:**
+
 - Company email account
 - Grafana dashboard access
 - Status page admin access
@@ -62,6 +64,7 @@ curl -s https://api.company.com/alert/health | jq '.status'
 ```
 
 **Expected Output:**
+
 ```json
 {
   "status": "healthy",
@@ -88,7 +91,7 @@ df -h | grep -E '(/$|/var|/opt)'
 
 ### Grafana Dashboard
 
-1. **Open browser**: https://grafana.company.com/reddit-watcher
+1. **Open browser**: <https://grafana.company.com/reddit-watcher>
 2. **Login** with your company credentials
 3. **Navigate to** "Reddit Watcher Overview" dashboard
 4. **Verify** all panels show green status
@@ -102,7 +105,7 @@ df -h | grep -E '(/$|/var|/opt)'
 
 ### Prometheus Alerts
 
-1. **Open**: https://prometheus.company.com/alerts
+1. **Open**: <https://prometheus.company.com/alerts>
 2. **Check**: No firing alerts
 3. **Review**: Any warning-level alerts
 
@@ -146,6 +149,7 @@ curl -s https://api.company.com/coordinator/discover | jq '.agents | keys[]'
 ```
 
 **Expected Output:**
+
 ```
 "alert"
 "coordinator"
@@ -192,7 +196,7 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 
 ### Email Lists
 
-- **Subscribe to**: operations@company.com
+- **Subscribe to**: <operations@company.com>
 - **Set up filters** for reddit-watcher alerts
 - **Add contacts**: Key team members
 
@@ -243,24 +247,28 @@ echo "alias status='docker-compose ps'" >> ~/.bashrc
 ## Verification Checklist
 
 **System Access:**
+
 - [ ] Can SSH to production server
 - [ ] Can execute Docker commands
 - [ ] Can access application directory
 - [ ] Can view logs
 
 **Monitoring Access:**
+
 - [ ] Can access Grafana dashboard
 - [ ] Can view system metrics
 - [ ] Can see alert status
 - [ ] Can access log management
 
 **Communication:**
+
 - [ ] Joined Slack channels
 - [ ] Subscribed to email lists
 - [ ] Have emergency contact info
 - [ ] Know escalation procedures
 
 **Basic Operations:**
+
 - [ ] Can check system health
 - [ ] Can view recent workflows
 - [ ] Can test agent communication
@@ -292,29 +300,34 @@ echo "alias status='docker-compose ps'" >> ~/.bashrc
 ## Getting Help
 
 ### Immediate Questions
+
 - **Slack**: #reddit-watcher-support
-- **Email**: support@company.com
+- **Email**: <support@company.com>
 - **Phone**: +1-555-SUPPORT
 
 ### Documentation Issues
+
 - **Missing info**: Contact docs team
 - **Outdated procedures**: Report in Slack
 - **Access problems**: Contact IT support
 
 ### Training Questions
-- **Training schedule**: training@company.com
+
+- **Training schedule**: <training@company.com>
 - **Skill development**: Discuss with manager
 - **Certification**: HR department
 
 ## Common Beginner Mistakes
 
 ### ❌ Don't Do This
+
 - Don't restart services without checking logs first
 - Don't ignore warning alerts
 - Don't make configuration changes without approval
 - Don't skip the health check routine
 
 ### ✅ Do This Instead
+
 - Always check logs before taking action
 - Investigate all alerts, even warnings
 - Follow change management procedures

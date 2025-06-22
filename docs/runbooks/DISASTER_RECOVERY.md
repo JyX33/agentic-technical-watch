@@ -18,51 +18,61 @@ This runbook provides comprehensive procedures for recovering the Reddit Technic
 ## Disaster Categories
 
 ### Level 1: Service Degradation
+
 **Impact:** Single service failure, reduced functionality
 **RTO:** 15 minutes
 **RPO:** 1 hour
 
 **Examples:**
+
 - Single agent failure
 - External API timeout
 - Memory pressure
 
 ### Level 2: Partial System Failure
+
 **Impact:** Multiple services affected, significant functionality loss
 **RTO:** 1 hour
 **RPO:** 4 hours
 
 **Examples:**
+
 - Database connectivity issues
 - Redis failure
 - Multiple agent failures
 
 ### Level 3: Complete System Failure
+
 **Impact:** Total system unavailability
 **RTO:** 4 hours
 **RPO:** 24 hours
 
 **Examples:**
+
 - Server hardware failure
 - Data center outage
 - Complete data corruption
 
 ### Level 4: Security Incident
+
 **Impact:** Data breach or system compromise
 **RTO:** Variable (depends on investigation)
 **RPO:** Point of compromise
 
 **Examples:**
+
 - Unauthorized access
 - Data exfiltration
 - Malware infection
 
 ### Level 5: Catastrophic Loss
+
 **Impact:** Complete infrastructure loss
 **RTO:** 24 hours
 **RPO:** 24 hours
 
 **Examples:**
+
 - Natural disasters
 - Complete data center loss
 - Hosting provider failure
@@ -81,6 +91,7 @@ This runbook provides comprehensive procedures for recovering the Reddit Technic
 ### Automated Backups
 
 **Database Backups:**
+
 ```bash
 #!/bin/bash
 # automated_backup.sh
@@ -117,6 +128,7 @@ echo "Backup completed: $TIMESTAMP"
 ```
 
 **Schedule with cron:**
+
 ```bash
 # Daily backup at 2 AM
 0 2 * * * /path/to/automated_backup.sh
@@ -128,6 +140,7 @@ echo "Backup completed: $TIMESTAMP"
 ### Off-site Backup
 
 **Cloud Storage Sync:**
+
 ```bash
 #!/bin/bash
 # cloud_backup_sync.sh
@@ -147,6 +160,7 @@ echo "Cloud backup sync completed"
 ### Backup Verification
 
 **Daily Backup Verification:**
+
 ```bash
 #!/bin/bash
 # verify_backup.sh
@@ -189,6 +203,7 @@ fi
 ### Level 1: Service Degradation Recovery
 
 **Single Agent Failure:**
+
 ```bash
 # 1. Identify failed service
 docker-compose -f docker-compose.prod.yml ps | grep -v "Up"
@@ -207,6 +222,7 @@ watch -n 30 'docker-compose -f docker-compose.prod.yml ps [failed-service]'
 ```
 
 **External API Issues:**
+
 ```bash
 # 1. Verify external connectivity
 curl -I https://reddit.com
@@ -231,6 +247,7 @@ docker-compose -f docker-compose.prod.yml logs | grep -i "rate limit"
 ### Level 2: Partial System Failure Recovery
 
 **Database Connectivity Issues:**
+
 ```bash
 # 1. Check database status
 docker-compose -f docker-compose.prod.yml ps db
@@ -256,6 +273,7 @@ docker-compose -f docker-compose.prod.yml restart coordinator-agent retrieval-ag
 ```
 
 **Redis Service Discovery Failure:**
+
 ```bash
 # 1. Check Redis status
 docker-compose -f docker-compose.prod.yml ps redis
@@ -280,6 +298,7 @@ curl -s http://localhost:8000/discover | jq '.agents | length'
 ### Level 3: Complete System Failure Recovery
 
 **Server Hardware/OS Failure:**
+
 ```bash
 # 1. Provision new server
 # - Same or better specifications
@@ -310,6 +329,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ```
 
 **Data Corruption Recovery:**
+
 ```bash
 # 1. Stop all services immediately
 docker-compose -f docker-compose.prod.yml down
@@ -356,6 +376,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ### Level 4: Security Incident Recovery
 
 **Security Breach Response:**
+
 ```bash
 # 1. Immediate containment
 # Stop all external-facing services
@@ -424,6 +445,7 @@ gunzip -c "$CLEAN_BACKUP" | docker-compose -f docker-compose.prod.yml exec -T db
 ### Level 5: Catastrophic Loss Recovery
 
 **Complete Infrastructure Loss:**
+
 ```bash
 # 1. Emergency response
 # Contact hosting provider
@@ -477,6 +499,7 @@ docker-compose -f docker-compose.prod.yml restart
 ### Database Point-in-Time Recovery
 
 **PostgreSQL PITR Setup:**
+
 ```bash
 # Enable WAL archiving for PITR
 docker-compose -f docker-compose.prod.yml exec db psql -U postgres -c "
@@ -494,6 +517,7 @@ docker-compose -f docker-compose.prod.yml exec db pg_basebackup -U postgres -D /
 ```
 
 **Recovery to Specific Time:**
+
 ```bash
 # Stop database
 docker-compose -f docker-compose.prod.yml stop db
@@ -527,6 +551,7 @@ docker-compose -f docker-compose.prod.yml restart db
 ### Individual Data Recovery
 
 **Recover Specific Reddit Posts:**
+
 ```bash
 # Query backup for specific data
 BACKUP_FILE="backups/reddit_watcher_db_YYYYMMDD_HHMMSS.sql.gz"
@@ -539,6 +564,7 @@ docker-compose -f docker-compose.prod.yml exec -T db psql -U reddit_watcher_user
 ```
 
 **Recover Configuration:**
+
 ```bash
 # Extract specific configuration from backup
 tar -xzf backups/config_YYYYMMDD_HHMMSS.tar.gz --wildcards "*.env*"
@@ -555,21 +581,25 @@ grep "REDDIT_CLIENT_ID" .env.prod.backup >> .env.prod
 ### Incident Classification
 
 **Level 1: Low Impact**
+
 - Failed login attempts
 - Minor configuration exposure
 - Non-sensitive data access
 
 **Level 2: Medium Impact**
+
 - Unauthorized API access
 - Configuration file exposure
 - Limited data access
 
 **Level 3: High Impact**
+
 - Database access
 - Credential compromise
 - Data modification
 
 **Level 4: Critical Impact**
+
 - Full system compromise
 - Data exfiltration
 - Service disruption
@@ -577,6 +607,7 @@ grep "REDDIT_CLIENT_ID" .env.prod.backup >> .env.prod
 ### Response Procedures
 
 **Immediate Response (0-1 hour):**
+
 ```bash
 # 1. Contain the incident
 docker-compose -f docker-compose.prod.yml stop traefik  # Stop external access
@@ -602,6 +633,7 @@ ORDER BY n_tup_ins + n_tup_upd + n_tup_del DESC;"
 ```
 
 **Investigation (1-24 hours):**
+
 ```bash
 # 1. Analyze logs for attack vectors
 grep -E "(authentication|authorization|login|access)" incident_logs_*.log
@@ -623,6 +655,7 @@ ss -tlnp
 ```
 
 **Recovery (24-48 hours):**
+
 ```bash
 # 1. Clean system rebuild
 docker-compose -f docker-compose.prod.yml down
@@ -648,6 +681,7 @@ CLEAN_BACKUP=$(ls -t /var/backups/reddit-watcher/reddit_watcher_db_*.sql.gz | he
 ### Stakeholder Notification
 
 **Internal Notifications:**
+
 ```yaml
 Technical Team: technical-team@yourdomain.com
 Management: management@yourdomain.com
@@ -656,6 +690,7 @@ Legal Team: legal@yourdomain.com
 ```
 
 **External Notifications:**
+
 ```yaml
 Hosting Provider: support@hostinger.com
 DNS Provider: support@dns-provider.com
@@ -742,6 +777,7 @@ Participants: [List of attendees]
 ### System Validation
 
 **Complete Health Check:**
+
 ```bash
 # 1. Full system validation
 ./deploy_production.sh validate
@@ -768,6 +804,7 @@ curl -X POST -H "Content-Type: application/json" \
 ### Documentation Updates
 
 **Incident Documentation:**
+
 ```bash
 # Create incident report
 cat > incident_report_$(date +%Y%m%d).md << EOF
@@ -802,6 +839,7 @@ EOF
 ```
 
 **Update Runbooks:**
+
 ```bash
 # Update this runbook with lessons learned
 # Add new failure scenarios encountered
@@ -812,6 +850,7 @@ EOF
 ### Monitoring Enhancement
 
 **Additional Monitoring:**
+
 ```bash
 # Enhanced alerting rules
 cat >> docker/prometheus/rules/reddit_watcher_alerts.yml << EOF
@@ -839,6 +878,7 @@ EOF
 ### Security Hardening
 
 **Post-Incident Security:**
+
 ```bash
 # 1. Update all credentials
 # Generate new strong passwords
@@ -864,6 +904,7 @@ EOF
 ### Backup Strategy Review
 
 **Backup Improvements:**
+
 ```bash
 # 1. Increase backup frequency
 # Change from daily to every 6 hours for critical data
@@ -885,6 +926,7 @@ EOF
 ### Disaster Recovery Testing
 
 **Regular DR Tests:**
+
 ```bash
 #!/bin/bash
 # disaster_recovery_test.sh
@@ -923,6 +965,7 @@ echo "DR Test Results - $(date): RTO=$RTO seconds" >> dr_test_results.log
 ```
 
 **Schedule Regular Tests:**
+
 ```bash
 # Monthly DR test (first Sunday of each month)
 0 3 1-7 * 0 [ $(date +%u) -eq 7 ] && /path/to/disaster_recovery_test.sh
@@ -932,6 +975,7 @@ echo "DR Test Results - $(date): RTO=$RTO seconds" >> dr_test_results.log
 ```
 
 This disaster recovery runbook should be:
+
 1. Reviewed and updated quarterly
 2. Tested regularly through simulations
 3. Validated against actual incidents

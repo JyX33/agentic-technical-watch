@@ -7,6 +7,7 @@ Complete incident response procedures for the Reddit Technical Watcher system.
 ### Severity Levels
 
 **Critical (P1) - System Down**
+
 - Complete system failure
 - Data loss or corruption
 - Security breach
@@ -14,6 +15,7 @@ Complete incident response procedures for the Reddit Technical Watcher system.
 - **Resolution Target: 1 hour**
 
 **High (P2) - Severe Degradation**
+
 - Significant service degradation
 - Multiple agent failures
 - External API failures
@@ -21,6 +23,7 @@ Complete incident response procedures for the Reddit Technical Watcher system.
 - **Resolution Target: 4 hours**
 
 **Medium (P3) - Partial Degradation**
+
 - Single agent failure
 - Performance issues
 - Non-critical feature failures
@@ -28,6 +31,7 @@ Complete incident response procedures for the Reddit Technical Watcher system.
 - **Resolution Target: 24 hours**
 
 **Low (P4) - Minor Issues**
+
 - Minor bugs
 - Documentation issues
 - Enhancement requests
@@ -39,18 +43,21 @@ Complete incident response procedures for the Reddit Technical Watcher system.
 ### 1. Detection and Alert (0-5 minutes)
 
 **Incident Sources:**
+
 - Automated monitoring alerts
 - User reports
 - Internal team detection
 - External monitoring services
 
 **Immediate Actions:**
+
 1. Acknowledge the alert
 2. Assess incident severity
 3. Create incident ticket
 4. Notify on-call team
 
 **Tools:**
+
 - Slack: #reddit-watcher-incidents
 - Incident tracking: JIRA/ServiceNow
 - Communication: Status page
@@ -58,6 +65,7 @@ Complete incident response procedures for the Reddit Technical Watcher system.
 ### 2. Initial Response (5-15 minutes)
 
 **P1 Critical Response:**
+
 ```bash
 # Immediate system check
 ./scripts/emergency-health-check.sh
@@ -71,6 +79,7 @@ curl -s https://api.company.com/alert/health | jq '.'
 ```
 
 **P2 High Response:**
+
 ```bash
 # Detailed system assessment
 ./scripts/system-assessment.sh
@@ -80,6 +89,7 @@ curl -s http://prometheus:9090/api/v1/query?query=up | jq '.'
 ```
 
 **Communication:**
+
 - Post in #reddit-watcher-incidents
 - Update status page
 - Notify stakeholders (P1 only)
@@ -87,6 +97,7 @@ curl -s http://prometheus:9090/api/v1/query?query=up | jq '.'
 ### 3. Investigation and Diagnosis (15-60 minutes)
 
 **Log Analysis:**
+
 ```bash
 # Check recent errors
 docker-compose logs --since=1h | grep -i "error\|exception\|fail"
@@ -99,6 +110,7 @@ tail -f /var/log/reddit-watcher/application.log
 ```
 
 **System Metrics:**
+
 ```bash
 # Check resource usage
 docker stats
@@ -114,6 +126,7 @@ docker exec redis-reddit-watcher redis-cli info stats
 ```
 
 **Network Connectivity:**
+
 ```bash
 # Check external dependencies
 curl -I https://www.reddit.com/api/v1/me
@@ -127,6 +140,7 @@ docker network inspect reddit-watcher_default
 ### 4. Containment and Workaround (Immediate)
 
 **Service Isolation:**
+
 ```bash
 # Isolate failing agent
 docker-compose stop failing-agent
@@ -136,6 +150,7 @@ docker-compose stop failing-agent
 ```
 
 **Circuit Breaker Activation:**
+
 ```bash
 # Manually trigger circuit breakers
 curl -X POST -H "X-API-Key: $API_KEY" \
@@ -143,6 +158,7 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 ```
 
 **Fallback Procedures:**
+
 - Enable maintenance mode
 - Switch to backup systems
 - Activate manual processes
@@ -152,6 +168,7 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 **Common Resolution Steps:**
 
 **Agent Restart:**
+
 ```bash
 # Restart specific agent
 docker-compose restart agent-name
@@ -161,6 +178,7 @@ curl -s https://api.company.com/agent-name/health | jq '.status'
 ```
 
 **System Restart:**
+
 ```bash
 # Full system restart
 docker-compose down
@@ -171,6 +189,7 @@ docker-compose up -d
 ```
 
 **Database Recovery:**
+
 ```bash
 # Check database integrity
 docker exec postgres-reddit-watcher pg_dump -U postgres reddit_watcher > /tmp/integrity_check.sql
@@ -180,6 +199,7 @@ docker exec postgres-reddit-watcher pg_dump -U postgres reddit_watcher > /tmp/in
 ```
 
 **Configuration Rollback:**
+
 ```bash
 # Rollback to previous configuration
 git checkout HEAD~1 -- config/
@@ -189,6 +209,7 @@ docker-compose up -d
 ### 6. Verification and Testing
 
 **Health Verification:**
+
 ```bash
 # Comprehensive health check
 ./scripts/comprehensive-health-check.sh
@@ -198,6 +219,7 @@ docker-compose up -d
 ```
 
 **Performance Validation:**
+
 ```bash
 # Load testing
 ./scripts/load-test.sh --duration=5m
@@ -211,11 +233,13 @@ curl -s http://prometheus:9090/api/v1/query?query=up | jq '.data.result[].value[
 ### Playbook 1: Complete System Failure
 
 **Symptoms:**
+
 - All agents return 503 or timeout
 - No response from load balancer
 - Multiple monitoring alerts
 
 **Response:**
+
 ```bash
 # 1. Check infrastructure
 docker ps | grep reddit-watcher
@@ -240,11 +264,13 @@ docker-compose up -d
 ### Playbook 2: Database Connection Failure
 
 **Symptoms:**
+
 - Database connection errors
 - Agents report database unavailable
 - PostgreSQL connection alerts
 
 **Response:**
+
 ```bash
 # 1. Check database status
 docker exec postgres-reddit-watcher pg_isready -U postgres
@@ -266,11 +292,13 @@ curl -s https://api.company.com/coordinator/health | jq '.database_status'
 ### Playbook 3: Redis Service Discovery Failure
 
 **Symptoms:**
+
 - Agents can't discover each other
 - Service registration failures
 - Redis connection errors
 
 **Response:**
+
 ```bash
 # 1. Check Redis status
 docker exec redis-reddit-watcher redis-cli ping
@@ -291,11 +319,13 @@ docker-compose restart redis
 ### Playbook 4: External API Failure
 
 **Symptoms:**
+
 - Reddit API failures
 - Gemini API failures
 - Rate limiting errors
 
 **Response:**
+
 ```bash
 # 1. Check API status
 curl -I https://www.reddit.com/api/v1/me
@@ -316,11 +346,13 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 ### Playbook 5: High Resource Usage
 
 **Symptoms:**
+
 - High CPU/memory usage
 - Slow response times
 - Resource exhaustion alerts
 
 **Response:**
+
 ```bash
 # 1. Identify resource usage
 docker stats --no-stream
@@ -343,6 +375,7 @@ docker-compose scale service-name=2
 ## Communication Templates
 
 ### Incident Alert Template
+
 ```
 🚨 INCIDENT ALERT - P1 Critical
 System: Reddit Technical Watcher
@@ -355,6 +388,7 @@ Lead: [Incident commander]
 ```
 
 ### Status Update Template
+
 ```
 📊 INCIDENT UPDATE - P1 Critical
 System: Reddit Technical Watcher
@@ -366,6 +400,7 @@ Lead: [Incident commander]
 ```
 
 ### Resolution Notification Template
+
 ```
 ✅ INCIDENT RESOLVED - P1 Critical
 System: Reddit Technical Watcher
@@ -381,6 +416,7 @@ Lead: [Incident commander]
 ### 1. Incident Documentation (Within 24 hours)
 
 **Required Documentation:**
+
 - Incident timeline
 - Root cause analysis
 - Impact assessment
@@ -388,6 +424,7 @@ Lead: [Incident commander]
 - Lessons learned
 
 **Template:**
+
 ```markdown
 # Incident Report - [Date] - [Brief Title]
 
@@ -420,12 +457,14 @@ Lead: [Incident commander]
 ### 2. Post-Incident Review (Within 48 hours)
 
 **Review Meeting:**
+
 - Incident commander
 - Engineering team
 - Operations team
 - Stakeholders
 
 **Review Agenda:**
+
 1. Incident walkthrough
 2. Root cause analysis
 3. Response evaluation
@@ -435,6 +474,7 @@ Lead: [Incident commander]
 ### 3. Follow-up Actions (Within 1 week)
 
 **Common Follow-ups:**
+
 - Update monitoring and alerting
 - Improve documentation
 - Infrastructure improvements
@@ -444,21 +484,25 @@ Lead: [Incident commander]
 ## Incident Response Tools
 
 ### Monitoring and Alerting
-- **Prometheus**: http://prometheus:9090
-- **Grafana**: https://grafana.company.com
-- **AlertManager**: http://alertmanager:9093
+
+- **Prometheus**: <http://prometheus:9090>
+- **Grafana**: <https://grafana.company.com>
+- **AlertManager**: <http://alertmanager:9093>
 
 ### Communication
+
 - **Slack**: #reddit-watcher-incidents
-- **Status Page**: https://status.company.com
-- **Email**: incidents@company.com
+- **Status Page**: <https://status.company.com>
+- **Email**: <incidents@company.com>
 
 ### Logging and Metrics
+
 - **Application Logs**: `/var/log/reddit-watcher/`
 - **System Logs**: `journalctl`
 - **Docker Logs**: `docker-compose logs`
 
 ### Incident Management
+
 - **Ticketing**: JIRA/ServiceNow
 - **Runbooks**: This documentation
 - **Escalation**: See [README](./README.md)

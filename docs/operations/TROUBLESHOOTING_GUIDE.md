@@ -59,11 +59,13 @@ docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsa
 **Problem: Coordinator Agent Won't Start**
 
 *Symptoms:*
+
 - Container exits immediately
 - Health check fails
 - Service discovery empty
 
 *Diagnosis:*
+
 ```bash
 # Check container logs
 docker-compose -f docker-compose.prod.yml logs coordinator-agent
@@ -77,6 +79,7 @@ curl -f http://localhost:6379 || echo "Redis unreachable"
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Verify environment variables
 grep -E "(DATABASE_URL|REDIS_URL|A2A_API_KEY)" .env.prod
@@ -99,11 +102,13 @@ docker-compose -f docker-compose.prod.yml logs -f coordinator-agent
 **Problem: Workflow Execution Failures**
 
 *Symptoms:*
+
 - No recent workflow completions
 - Agent communication timeouts
 - Circuit breaker opening frequently
 
 *Diagnosis:*
+
 ```bash
 # Check workflow status
 docker-compose -f docker-compose.prod.yml exec coordinator-agent python -c "
@@ -130,6 +135,7 @@ curl -s http://localhost:8000/discover | jq '.agents | keys'
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Reset circuit breakers
 docker-compose -f docker-compose.prod.yml restart coordinator-agent
@@ -153,11 +159,13 @@ curl -X POST -H "Content-Type: application/json" \
 **Problem: Reddit API Failures**
 
 *Symptoms:*
+
 - No new posts being retrieved
 - Authentication errors
 - Rate limit exceeded errors
 
 *Diagnosis:*
+
 ```bash
 # Check Reddit API credentials
 docker-compose -f docker-compose.prod.yml exec retrieval-agent python -c "
@@ -190,6 +198,7 @@ docker-compose -f docker-compose.prod.yml logs retrieval-agent | grep -i "rate"
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Verify credentials are correct
 # Check Reddit app configuration at https://www.reddit.com/prefs/apps
@@ -225,11 +234,13 @@ asyncio.run(test())
 **Problem: Gemini API Failures**
 
 *Symptoms:*
+
 - All posts being marked as irrelevant
 - API authentication errors
 - Quota exceeded errors
 
 *Diagnosis:*
+
 ```bash
 # Check Gemini API key
 docker-compose -f docker-compose.prod.yml exec filter-agent python -c "
@@ -257,6 +268,7 @@ docker-compose -f docker-compose.prod.yml logs filter-agent | grep -E "(relevanc
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Verify API key is valid
 # Check Google AI Studio: https://makersuite.google.com/app/apikey
@@ -296,11 +308,13 @@ asyncio.run(test())
 **Problem: Summarization Failures**
 
 *Symptoms:*
+
 - Empty summaries
 - High memory usage
 - Timeout errors
 
 *Diagnosis:*
+
 ```bash
 # Check memory usage
 docker stats reddit_watcher_summarise_prod --no-stream
@@ -320,6 +334,7 @@ print(f'Models available: {len(models)}')
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Increase memory limits if needed
 # Edit docker-compose.prod.yml:
@@ -354,11 +369,13 @@ docker-compose -f docker-compose.prod.yml restart summarise-agent
 **Problem: Notifications Not Sending**
 
 *Symptoms:*
+
 - No Slack messages received
 - No emails received
 - Alert delivery failures in logs
 
 *Diagnosis:*
+
 ```bash
 # Check notification configuration
 docker-compose -f docker-compose.prod.yml exec alert-agent python -c "
@@ -381,6 +398,7 @@ docker-compose -f docker-compose.prod.yml logs alert-agent | grep -E "(smtp|emai
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Test SMTP connectivity
 docker-compose -f docker-compose.prod.yml exec alert-agent python -c "
@@ -438,11 +456,13 @@ asyncio.run(test())
 **Problem: Database Connection Failures**
 
 *Symptoms:*
+
 - "Connection refused" errors
 - Timeout errors
 - Max connections exceeded
 
 *Diagnosis:*
+
 ```bash
 # Check database container status
 docker-compose -f docker-compose.prod.yml ps db
@@ -468,6 +488,7 @@ WHERE NOT blocked_locks.granted;"
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Restart database if completely unresponsive
 docker-compose -f docker-compose.prod.yml restart db
@@ -492,11 +513,13 @@ watch 'docker-compose -f docker-compose.prod.yml exec db psql -U reddit_watcher_
 **Problem: Database Performance Issues**
 
 *Symptoms:*
+
 - Slow query responses
 - High CPU usage on database
 - Timeouts
 
 *Diagnosis:*
+
 ```bash
 # Check slow queries
 docker-compose -f docker-compose.prod.yml exec db psql -U reddit_watcher_user -d reddit_watcher -c "
@@ -520,6 +543,7 @@ ORDER BY idx_tup_read DESC;"
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Run VACUUM and ANALYZE
 docker-compose -f docker-compose.prod.yml exec db psql -U reddit_watcher_user -d reddit_watcher -c "VACUUM ANALYZE;"
@@ -543,11 +567,13 @@ docker stats reddit_watcher_db_prod --no-stream
 **Problem: Redis Connection or Memory Issues**
 
 *Symptoms:*
+
 - Service discovery failures
 - "Out of memory" errors
 - Connection timeouts
 
 *Diagnosis:*
+
 ```bash
 # Check Redis status
 docker-compose -f docker-compose.prod.yml exec redis redis-cli --no-auth-warning -a "$REDIS_PASSWORD" info server
@@ -566,6 +592,7 @@ docker-compose -f docker-compose.prod.yml exec redis redis-cli --no-auth-warning
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Clear Redis cache if memory full
 docker-compose -f docker-compose.prod.yml exec redis redis-cli --no-auth-warning -a "$REDIS_PASSWORD" flushdb
@@ -589,11 +616,13 @@ watch 'docker-compose -f docker-compose.prod.yml exec redis redis-cli --no-auth-
 **Problem: Container Communication Failures**
 
 *Symptoms:*
+
 - Agents can't reach each other
 - Database/Redis unreachable
 - External API failures
 
 *Diagnosis:*
+
 ```bash
 # Check Docker networks
 docker network ls
@@ -614,6 +643,7 @@ docker-compose -f docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Ports
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Recreate networks
 docker-compose -f docker-compose.prod.yml down
@@ -643,11 +673,13 @@ docker-compose -f docker-compose.prod.yml up -d
 **Problem: Agents Not Registering**
 
 *Symptoms:*
+
 - Empty `/discover` endpoint
 - Agents can't find each other
 - Service discovery timeouts
 
 *Diagnosis:*
+
 ```bash
 # Check service discovery endpoint
 curl -s http://localhost:8000/discover | jq .
@@ -666,6 +698,7 @@ docker-compose -f docker-compose.prod.yml logs | grep -i "register\|discovery"
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Clear Redis service discovery data
 docker-compose -f docker-compose.prod.yml exec redis redis-cli --no-auth-warning -a "$REDIS_PASSWORD" del agent:*
@@ -691,11 +724,13 @@ docker-compose -f docker-compose.prod.yml exec coordinator-agent ping -c 3 redis
 **Problem: JSON-RPC Errors**
 
 *Symptoms:*
+
 - "Method not found" errors
 - Invalid request errors
 - Timeout errors
 
 *Diagnosis:*
+
 ```bash
 # Test basic A2A communication
 curl -X POST -H "Content-Type: application/json" \
@@ -715,6 +750,7 @@ done
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Verify A2A protocol implementation
 # Check that all agents implement required methods
@@ -739,11 +775,13 @@ docker-compose -f docker-compose.prod.yml logs -f | grep -i a2a
 ### High CPU Usage
 
 **Symptoms:**
+
 - System load > 4.0
 - Container CPU usage > 80%
 - Slow response times
 
 *Diagnosis:*
+
 ```bash
 # Check system load
 uptime
@@ -758,6 +796,7 @@ docker-compose -f docker-compose.prod.yml exec db ps aux
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Identify CPU-intensive processes
 top -p $(docker inspect reddit_watcher_db_prod --format '{{.State.Pid}}')
@@ -780,11 +819,13 @@ WHERE mean_time > 500 ORDER BY total_time DESC LIMIT 5;"
 ### High Memory Usage
 
 **Symptoms:**
+
 - Available memory < 1GB
 - Container memory usage > 90%
 - OOM killer events
 
 *Diagnosis:*
+
 ```bash
 # Check system memory
 free -h
@@ -802,6 +843,7 @@ cat /proc/swaps
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Restart memory-intensive services
 docker-compose -f docker-compose.prod.yml restart summarise-agent coordinator-agent
@@ -824,11 +866,13 @@ docker-compose -f docker-compose.prod.yml up -d --scale filter-agent=2 --scale s
 ### Disk Space Issues
 
 **Symptoms:**
+
 - Disk usage > 90%
 - "No space left on device" errors
 - Log rotation failures
 
 *Diagnosis:*
+
 ```bash
 # Check disk usage
 df -h
@@ -844,6 +888,7 @@ docker system df
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Clean up Docker resources
 docker system prune -a --volumes -f
@@ -869,11 +914,13 @@ sudo logrotate -f /etc/logrotate.conf
 **Problem: Reddit API Rate Limiting or Failures**
 
 *Symptoms:*
+
 - 429 "Too Many Requests" errors
 - 403 "Forbidden" errors
 - Connection timeouts
 
 *Diagnosis:*
+
 ```bash
 # Check Reddit API status
 curl -I https://www.reddit.com/api/v1/me
@@ -896,6 +943,7 @@ print('Rate limit info:', reddit.auth.limits)
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Wait for rate limit reset (if rate limited)
 # Reddit rate limits typically reset every hour
@@ -919,11 +967,13 @@ REDDIT_USER_AGENT="Reddit Technical Watcher v1.0 by /u/YourUsername (Contact: yo
 **Problem: Gemini API Quota or Performance Issues**
 
 *Symptoms:*
+
 - 429 "Quota exceeded" errors
 - Slow response times
 - Authentication failures
 
 *Diagnosis:*
+
 ```bash
 # Check Gemini API status
 curl -H "Authorization: Bearer $GEMINI_API_KEY" \
@@ -944,6 +994,7 @@ print(f'Available models: {len(models)}')
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Switch to fallback model
 # Edit .env.prod:
@@ -969,11 +1020,13 @@ GEMINI_MODEL_PRIMARY=gemini-2.5-flash
 **Problem: Data Integrity Issues**
 
 *Symptoms:*
+
 - Query errors
 - Constraint violations
 - Inconsistent data
 
 *Diagnosis:*
+
 ```bash
 # Check database integrity
 docker-compose -f docker-compose.prod.yml exec db psql -U reddit_watcher_user -d reddit_watcher -c "
@@ -994,6 +1047,7 @@ SELECT count(*) FROM reddit_posts WHERE subreddit_id NOT IN (SELECT id FROM subr
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Run database consistency checks
 docker-compose -f docker-compose.prod.yml exec db psql -U reddit_watcher_user -d reddit_watcher -c "
@@ -1028,11 +1082,13 @@ FROM reddit_posts;"
 **Problem: No Recent Data or Stale Information**
 
 *Symptoms:*
+
 - No posts newer than several hours
 - Empty workflow results
 - Stale monitoring data
 
 *Diagnosis:*
+
 ```bash
 # Check data freshness
 docker-compose -f docker-compose.prod.yml exec db psql -U reddit_watcher_user -d reddit_watcher -c "
@@ -1055,6 +1111,7 @@ docker-compose -f docker-compose.prod.yml logs --since 2h retrieval-agent | grep
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Trigger manual data collection
 curl -X POST -H "Content-Type: application/json" \
@@ -1098,11 +1155,13 @@ docker-compose -f docker-compose.prod.yml restart coordinator-agent retrieval-ag
 **Problem: Suspicious Access Patterns**
 
 *Symptoms:*
+
 - Multiple 401/403 errors
 - Unusual traffic patterns
 - Failed authentication attempts
 
 *Diagnosis:*
+
 ```bash
 # Check for authentication failures
 docker-compose -f docker-compose.prod.yml logs | grep -E "(401|403|unauthorized|authentication)" | tail -20
@@ -1119,6 +1178,7 @@ sudo grep -i "failed\|invalid" /var/log/auth.log | tail -10
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Block suspicious IPs (if identified)
 sudo ufw deny from [suspicious-ip]
@@ -1142,11 +1202,13 @@ sudo ufw deny from [suspicious-ip]
 **Problem: Sensitive Configuration Exposed**
 
 *Symptoms:*
+
 - API keys in logs
 - Configuration files accessible
 - Environment variables exposed
 
 *Diagnosis:*
+
 ```bash
 # Check for exposed secrets in logs
 docker-compose -f docker-compose.prod.yml logs | grep -E "(password|key|secret|token)" | head -10
@@ -1163,6 +1225,7 @@ curl -s http://localhost:8000/config 2>/dev/null || echo "Config endpoint not ex
 ```
 
 *Resolution:*
+
 ```bash
 # 1. Secure file permissions
 chmod 600 .env.prod
@@ -1192,6 +1255,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ### Quick Reference
 
 **System Commands:**
+
 ```bash
 # Emergency stop all services
 docker-compose -f docker-compose.prod.yml down
@@ -1210,6 +1274,7 @@ docker-compose -f docker-compose.prod.yml logs --since 1h
 ```
 
 **Key Ports:**
+
 - 8000: Coordinator Agent
 - 8001: Retrieval Agent
 - 8002: Filter Agent
@@ -1219,6 +1284,7 @@ docker-compose -f docker-compose.prod.yml logs --since 1h
 - 9090: Prometheus
 
 **Critical Files:**
+
 - `.env.prod`: Production configuration
 - `docker-compose.prod.yml`: Service definitions
 - `deploy_production.sh`: Deployment automation

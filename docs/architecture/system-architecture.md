@@ -7,6 +7,7 @@ Detailed technical architecture of the Reddit Technical Watcher system, includin
 The Reddit Technical Watcher is a **microservices-based autonomous monitoring system** built on **Google's Agent-to-Agent (A2A) protocol**. The system monitors Reddit every 4 hours for configurable topics, processes content through a multi-stage pipeline, and delivers actionable alerts via multiple channels.
 
 ### Core Workflow
+
 ```
 Reddit API → Collect → Filter → Summarize → Alert → Stakeholders
 ```
@@ -16,12 +17,14 @@ Reddit API → Collect → Filter → Summarize → Alert → Stakeholders
 ### 1. Presentation Layer
 
 **External Interfaces:**
+
 - **REST APIs**: A2A-compliant HTTP endpoints for each agent
 - **Agent Cards**: Service discovery via `/.well-known/agent.json`
 - **Health Endpoints**: System monitoring and health checks
 - **Admin Interface**: Configuration and monitoring dashboards
 
 **API Standards:**
+
 - **JSON-RPC 2.0**: A2A protocol communication
 - **OpenAPI 3.0**: API specification and documentation
 - **HTTP/2**: Modern protocol support with TLS
@@ -30,6 +33,7 @@ Reddit API → Collect → Filter → Summarize → Alert → Stakeholders
 ### 2. Application Layer
 
 **Agent Services:**
+
 ```
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
 │ CoordinatorAgent│  │ RetrievalAgent  │  │   FilterAgent   │
@@ -53,6 +57,7 @@ Reddit API → Collect → Filter → Summarize → Alert → Stakeholders
 ```
 
 **Agent Characteristics:**
+
 - **Autonomous**: Each agent operates independently
 - **Stateless**: No shared state between requests
 - **Resilient**: Circuit breakers and graceful degradation
@@ -63,6 +68,7 @@ Reddit API → Collect → Filter → Summarize → Alert → Stakeholders
 **Core Domain Services:**
 
 **Workflow Orchestration:**
+
 ```python
 class WorkflowOrchestrator:
     async def execute_monitoring_cycle(self, topics: List[str]) -> WorkflowResult:
@@ -82,6 +88,7 @@ class WorkflowOrchestrator:
 ```
 
 **Content Processing Pipeline:**
+
 - **Data Validation**: Pydantic models for type safety
 - **Transformation**: Reddit data → structured format
 - **Enrichment**: Metadata addition and categorization
@@ -90,6 +97,7 @@ class WorkflowOrchestrator:
 ### 4. Data Access Layer
 
 **Data Persistence:**
+
 ```
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
 │   PostgreSQL    │  │      Redis      │  │   File System   │
@@ -102,6 +110,7 @@ class WorkflowOrchestrator:
 ```
 
 **Data Access Patterns:**
+
 - **Repository Pattern**: Abstracted data access
 - **Unit of Work**: Transaction management
 - **Connection Pooling**: Efficient resource usage
@@ -110,6 +119,7 @@ class WorkflowOrchestrator:
 ### 5. Infrastructure Layer
 
 **Container Orchestration:**
+
 ```yaml
 # Docker Compose Architecture
 services:
@@ -132,6 +142,7 @@ services:
 ### Agent-to-Agent Communication
 
 **A2A Protocol Implementation:**
+
 ```
 ┌─────────────────┐
 │   HTTP Client   │
@@ -173,6 +184,7 @@ services:
 ### Service Discovery Mechanism
 
 **Redis-Based Discovery:**
+
 ```python
 # Agent Registration
 agent_info = {
@@ -192,6 +204,7 @@ redis.expire(f"agent:{agent_type}", 300)  # 5 minutes TTL
 ### Data Flow Architecture
 
 **End-to-End Data Flow:**
+
 ```
 1. Scheduled Trigger (Cron/Timer)
          ↓
@@ -219,6 +232,7 @@ redis.expire(f"agent:{agent_type}", 300)  # 5 minutes TTL
 ### External API Integrations
 
 **Reddit API Integration:**
+
 ```python
 class RedditAPIClient:
     def __init__(self, client_id: str, client_secret: str):
@@ -235,6 +249,7 @@ class RedditAPIClient:
 ```
 
 **Gemini AI Integration:**
+
 ```python
 class GeminiAPIClient:
     def __init__(self, api_key: str):
@@ -249,6 +264,7 @@ class GeminiAPIClient:
 ### Security Architecture Integration
 
 **Authentication & Authorization:**
+
 ```
 ┌─────────────────┐
 │   API Gateway   │  ← Optional future enhancement
@@ -279,6 +295,7 @@ class GeminiAPIClient:
 ### Horizontal Scaling Patterns
 
 **Agent Scaling:**
+
 ```yaml
 # Docker Compose Scaling
 services:
@@ -294,6 +311,7 @@ services:
 ```
 
 **Load Balancing:**
+
 ```
 ┌─────────────────┐
 │  Load Balancer  │
@@ -311,6 +329,7 @@ services:
 ### Performance Optimization
 
 **Caching Strategy:**
+
 ```
 ┌─────────────────┐
 │   Application   │
@@ -329,6 +348,7 @@ services:
 ```
 
 **Async Processing:**
+
 ```python
 # Non-blocking I/O throughout the stack
 async def process_workflow():
@@ -348,6 +368,7 @@ async def process_workflow():
 ### Metrics Collection
 
 **Prometheus Integration:**
+
 ```
 Application Metrics → Prometheus → Grafana → Alerts
          ↓
@@ -359,6 +380,7 @@ Application Metrics → Prometheus → Grafana → Alerts
 ```
 
 **Distributed Tracing:**
+
 ```python
 # OpenTelemetry integration
 @trace_async("workflow.execution")
@@ -371,6 +393,7 @@ async def execute_workflow(span_context):
 ### Logging Architecture
 
 **Structured Logging:**
+
 ```python
 import structlog
 
@@ -385,6 +408,7 @@ await logger.ainfo(
 ```
 
 **Log Aggregation:**
+
 ```
 Agent Logs → JSON Format → File System → Log Rotation
                 ↓
@@ -398,6 +422,7 @@ Agent Logs → JSON Format → File System → Log Rotation
 ### Container Strategy
 
 **Multi-Stage Docker Builds:**
+
 ```dockerfile
 # Production optimized builds
 FROM python:3.12-slim as base
@@ -410,6 +435,7 @@ USER reddit-watcher:reddit-watcher
 ```
 
 **Service Mesh (Future):**
+
 ```
 ┌─────────────────┐
 │   Istio/Envoy   │  ← Service mesh proxy
@@ -430,6 +456,7 @@ USER reddit-watcher:reddit-watcher
 ### Environment-Based Configuration
 
 **Configuration Hierarchy:**
+
 ```
 1. Environment Variables (highest priority)
 2. .env Files
@@ -438,6 +465,7 @@ USER reddit-watcher:reddit-watcher
 ```
 
 **Pydantic Configuration:**
+
 ```python
 class Settings(BaseSettings):
     # Type-safe configuration with validation
@@ -456,6 +484,7 @@ class Settings(BaseSettings):
 ### Circuit Breaker Pattern
 
 **Implementation:**
+
 ```python
 class CircuitBreaker:
     def __init__(self, failure_threshold=5, recovery_timeout=60):
@@ -474,6 +503,7 @@ class CircuitBreaker:
 ### Graceful Degradation
 
 **Fallback Strategies:**
+
 - **Service Unavailable**: Return cached results
 - **API Rate Limited**: Implement exponential backoff
 - **Database Failure**: Use read replicas or cached data
@@ -484,12 +514,14 @@ class CircuitBreaker:
 ### Defense in Depth
 
 **Security Layers:**
+
 1. **Network Security**: VPC, security groups, firewalls
 2. **Application Security**: Authentication, authorization
 3. **Data Security**: Encryption at rest and in transit
 4. **Operational Security**: Audit logging, monitoring
 
 **Secrets Management:**
+
 ```python
 # Environment-based secrets (never in code)
 DATABASE_URL=postgresql://user:pass@host:5432/db

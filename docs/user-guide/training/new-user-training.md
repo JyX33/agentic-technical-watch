@@ -14,13 +14,16 @@ Comprehensive 2-week training program for new operations staff joining the Reddi
 ### Day 1: System Introduction (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - Reddit Technical Watcher overview and business purpose
 - System architecture and component relationships
 - A2A (Agent-to-Agent) protocol introduction
 - Development vs. production environments
 
 **Hands-On Activities:**
+
 ```bash
 # System exploration
 ssh ops@prod-reddit-watcher.company.com
@@ -38,19 +41,23 @@ curl https://api.company.com/coordinator/.well-known/agent.json | jq '.'
 ```
 
 **Learning Objectives:**
+
 - Understand system purpose and business value
 - Identify all system components
 - Navigate production environment
 - Access basic documentation
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - User roles and responsibilities
 - Security policies and access control
 - Communication channels and escalation procedures
 - Documentation structure and resources
 
 **Hands-On Activities:**
+
 ```bash
 # Access management systems
 # - Grafana dashboard tour
@@ -69,6 +76,7 @@ sudo -l
 ```
 
 **Assessment:**
+
 - Quiz: System components and architecture
 - Practical: Navigate documentation and find specific information
 - Role-play: Basic communication scenarios
@@ -76,13 +84,16 @@ sudo -l
 ### Day 2: Monitoring and Health Checks (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - System health monitoring concepts
 - Grafana dashboard overview
 - Prometheus metrics and alerting
 - Log management and analysis
 
 **Hands-On Activities:**
+
 ```bash
 # Health check procedures
 ./scripts/health-check.sh
@@ -99,19 +110,23 @@ grep -i "error" /var/log/reddit-watcher/application.log
 ```
 
 **Learning Objectives:**
+
 - Perform comprehensive health checks
 - Navigate monitoring dashboards effectively
 - Identify normal vs. abnormal system behavior
 - Extract useful information from logs
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - Performance metrics interpretation
 - Capacity planning basics
 - Trend analysis and pattern recognition
 - Proactive monitoring techniques
 
 **Hands-On Activities:**
+
 ```bash
 # Performance monitoring
 docker stats --no-stream
@@ -130,6 +145,7 @@ df -h
 ```
 
 **Assessment:**
+
 - Practical: Perform complete system health check
 - Analysis: Identify issues from provided metrics
 - Exercise: Create monitoring dashboard
@@ -137,13 +153,16 @@ df -h
 ### Day 3: Agent Architecture (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - A2A protocol deep dive
 - Individual agent responsibilities
 - Service discovery mechanism
 - Inter-agent communication patterns
 
 **Hands-On Activities:**
+
 ```bash
 # Agent discovery
 curl -s https://api.company.com/coordinator/discover | jq '.'
@@ -159,19 +178,23 @@ done
 ```
 
 **Learning Objectives:**
+
 - Understand A2A protocol implementation
 - Identify each agent's role and capabilities
 - Verify service discovery functionality
 - Test inter-agent communication
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - Workflow orchestration concepts
 - Data flow through the system
 - Error handling and recovery mechanisms
 - Circuit breaker patterns
 
 **Hands-On Activities:**
+
 ```bash
 # Workflow testing
 curl -X POST -H "X-API-Key: $API_KEY" \
@@ -189,6 +212,7 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 ```
 
 **Assessment:**
+
 - Diagram: Draw complete system data flow
 - Practical: Execute and monitor a workflow
 - Troubleshooting: Identify agent communication issues
@@ -196,13 +220,16 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 ### Day 4: Database and Infrastructure (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - PostgreSQL database structure
 - Redis service discovery
 - Docker container management
 - Backup and recovery procedures
 
 **Hands-On Activities:**
+
 ```bash
 # Database exploration
 docker exec postgres-reddit-watcher psql -U postgres -d reddit_watcher -c "\dt"
@@ -218,19 +245,23 @@ docker inspect postgres-reddit-watcher | jq '.[0].State'
 ```
 
 **Learning Objectives:**
+
 - Navigate database structure
 - Understand Redis usage patterns
 - Manage Docker containers safely
 - Verify backup procedures
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - Network configuration and connectivity
 - Volume management and persistence
 - Resource limits and monitoring
 - Security considerations
 
 **Hands-On Activities:**
+
 ```bash
 # Network analysis
 docker network inspect reddit-watcher_default
@@ -247,6 +278,7 @@ docker volume inspect reddit-watcher_postgres-data
 ```
 
 **Assessment:**
+
 - Practical: Database query and backup verification
 - Exercise: Container restart and health verification
 - Security: Access control verification
@@ -254,13 +286,16 @@ docker volume inspect reddit-watcher_postgres-data
 ### Day 5: Basic Operations (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - Daily operations checklist
 - Routine maintenance tasks
 - Log rotation and cleanup
 - Performance monitoring
 
 **Hands-On Activities:**
+
 ```bash
 # Daily operations practice
 ./scripts/daily-health-check.sh
@@ -275,19 +310,23 @@ docker system prune -f
 ```
 
 **Learning Objectives:**
+
 - Execute daily operations checklist
 - Perform routine maintenance safely
 - Monitor system performance trends
 - Identify when escalation is needed
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - Documentation usage and updates
 - Incident reporting procedures
 - Change management processes
 - Team communication protocols
 
 **Hands-On Activities:**
+
 ```bash
 # Documentation practice
 # - Update operational logs
@@ -301,6 +340,7 @@ docker system prune -f
 ```
 
 **Assessment:**
+
 - Comprehensive: Complete daily operations cycle
 - Communication: Incident reporting simulation
 - Documentation: Update procedures based on experience
@@ -310,13 +350,16 @@ docker system prune -f
 ### Day 6: Alert Management (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - Alert classification and prioritization
 - Prometheus alert rules
 - Notification channels (Slack, email)
 - Alert response procedures
 
 **Hands-On Activities:**
+
 ```bash
 # Alert exploration
 curl -s http://prometheus:9090/api/v1/alerts | jq '.data.alerts[]'
@@ -332,19 +375,23 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 ```
 
 **Learning Objectives:**
+
 - Classify alerts by severity and impact
 - Understand alert rule configuration
 - Test notification delivery
 - Follow proper response procedures
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - Alert investigation techniques
 - Root cause analysis basics
 - Documentation requirements
 - Escalation criteria and procedures
 
 **Hands-On Activities:**
+
 ```bash
 # Alert simulation exercises
 # - Generate test alerts
@@ -358,6 +405,7 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 ```
 
 **Assessment:**
+
 - Simulation: Complete alert response cycle
 - Analysis: Root cause investigation exercise
 - Communication: Escalation procedure demonstration
@@ -365,13 +413,16 @@ curl -X POST -H "X-API-Key: $API_KEY" \
 ### Day 7: Basic Troubleshooting (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - Troubleshooting methodology
 - Log analysis techniques
 - Common failure patterns
 - Diagnostic tool usage
 
 **Hands-On Activities:**
+
 ```bash
 # Troubleshooting exercises
 ./scripts/troubleshooting-scenarios.sh
@@ -386,19 +437,23 @@ journalctl -u reddit-watcher --since="1 hour ago"
 ```
 
 **Learning Objectives:**
+
 - Apply systematic troubleshooting approach
 - Extract relevant information from logs
 - Use diagnostic tools effectively
 - Recognize when to escalate
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - Agent-specific troubleshooting
 - Database connectivity issues
 - Network connectivity problems
 - Performance troubleshooting basics
 
 **Hands-On Activities:**
+
 ```bash
 # Agent troubleshooting scenarios
 # - Agent not responding
@@ -417,6 +472,7 @@ journalctl -u reddit-watcher --since="1 hour ago"
 ```
 
 **Assessment:**
+
 - Practical: Troubleshoot provided scenarios
 - Analysis: Performance issue investigation
 - Documentation: Create troubleshooting report
@@ -424,13 +480,16 @@ journalctl -u reddit-watcher --since="1 hour ago"
 ### Day 8: Advanced Operations (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - Configuration management
 - Backup and recovery procedures
 - Update and deployment processes
 - Capacity planning basics
 
 **Hands-On Activities:**
+
 ```bash
 # Configuration management
 # - Review configuration files
@@ -448,19 +507,23 @@ journalctl -u reddit-watcher --since="1 hour ago"
 ```
 
 **Learning Objectives:**
+
 - Manage system configuration safely
 - Execute backup and recovery procedures
 - Understand deployment processes
 - Plan for capacity requirements
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - Security monitoring and compliance
 - Performance optimization techniques
 - Automation and scripting basics
 - Continuous improvement processes
 
 **Hands-On Activities:**
+
 ```bash
 # Security monitoring
 ./scripts/security-audit.sh
@@ -478,6 +541,7 @@ grep -i "auth\|login\|fail" /var/log/reddit-watcher/security.log
 ```
 
 **Assessment:**
+
 - Security: Security audit and reporting
 - Performance: Optimization recommendations
 - Automation: Create useful operations script
@@ -485,13 +549,16 @@ grep -i "auth\|login\|fail" /var/log/reddit-watcher/security.log
 ### Day 9: Emergency Procedures (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - Emergency response procedures
 - Disaster recovery planning
 - System restoration procedures
 - Communication during emergencies
 
 **Hands-On Activities:**
+
 ```bash
 # Emergency drill simulation
 # - System failure scenario
@@ -509,19 +576,23 @@ grep -i "auth\|login\|fail" /var/log/reddit-watcher/security.log
 ```
 
 **Learning Objectives:**
+
 - Execute emergency response procedures
 - Coordinate during crisis situations
 - Perform system recovery operations
 - Maintain clear communication
 
 #### Afternoon Session (4 hours)
+
 **Topics:**
+
 - Post-incident procedures
 - Root cause analysis techniques
 - System hardening and prevention
 - Lessons learned documentation
 
 **Hands-On Activities:**
+
 ```bash
 # Post-incident activities
 # - Incident report writing
@@ -535,6 +606,7 @@ grep -i "auth\|login\|fail" /var/log/reddit-watcher/security.log
 ```
 
 **Assessment:**
+
 - Simulation: Complete emergency response
 - Analysis: Post-incident review and reporting
 - Improvement: System hardening recommendations
@@ -542,34 +614,41 @@ grep -i "auth\|login\|fail" /var/log/reddit-watcher/security.log
 ### Day 10: Certification and Evaluation (8 hours)
 
 #### Morning Session (4 hours)
+
 **Topics:**
+
 - Training review and consolidation
 - Knowledge gap identification
 - Skill demonstration preparation
 - Certification requirements review
 
 **Activities:**
+
 - Comprehensive review of all training materials
 - Practice exercises for weak areas
 - Preparation for practical assessment
 - Final questions and clarifications
 
 #### Afternoon Session (4 hours)
+
 **Final Assessment:**
 
 **Written Exam (2 hours):**
+
 - System architecture and components
 - Alert classification and response
 - Troubleshooting methodology
 - Security and compliance
 
 **Practical Assessment (2 hours):**
+
 - Complete system health check
 - Investigate and resolve simulated issues
 - Emergency response simulation
 - Documentation and communication
 
 **Certification Requirements:**
+
 - Written exam score ≥ 80%
 - Practical assessment pass
 - Mentor recommendation
@@ -578,18 +657,21 @@ grep -i "auth\|login\|fail" /var/log/reddit-watcher/security.log
 ## Training Resources
 
 ### Required Reading
+
 - [System Overview](../system-overview.md)
 - [Operations Dashboard](../operations-dashboard.md)
 - [Health Monitoring](../health-monitoring.md)
 - [Daily Operations](../../runbooks/daily-operations.md)
 
 ### Reference Materials
+
 - [API Documentation](../../api/)
 - [Troubleshooting Guide](../../troubleshooting/)
 - [Runbooks](../../runbooks/)
 - [Architecture Documentation](../../architecture/)
 
 ### Practice Environments
+
 - **Training Environment**: training.company.com
 - **Sandbox Environment**: sandbox.company.com
 - **Simulation Tools**: Available on training systems
@@ -597,13 +679,16 @@ grep -i "auth\|login\|fail" /var/log/reddit-watcher/security.log
 ## Mentorship Program
 
 ### Assigned Mentor
+
 Each trainee is assigned an experienced operations team member as mentor:
+
 - Daily check-ins during training
 - Hands-on guidance during exercises
 - Assessment and feedback
 - Ongoing support after certification
 
 ### Mentorship Activities
+
 - Shadow mentor during real operations
 - Participate in actual incident response
 - Practice procedures in production environment
@@ -612,18 +697,21 @@ Each trainee is assigned an experienced operations team member as mentor:
 ## Continuing Education
 
 ### Monthly Training Sessions
+
 - New feature training
 - Advanced troubleshooting techniques
 - Security updates and best practices
 - Process improvements and updates
 
 ### Quarterly Assessments
+
 - Skills evaluation and gap analysis
 - Performance review and feedback
 - Career development planning
 - Advanced training recommendations
 
 ### Annual Certification Renewal
+
 - Updated knowledge assessment
 - Hands-on skills verification
 - Process and procedure updates

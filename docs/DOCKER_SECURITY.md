@@ -9,6 +9,7 @@ The Docker Compose configuration has been completely redesigned with security as
 ## Security Improvements Implemented
 
 ### 1. **Database Security**
+
 - ✅ **No default passwords**: Requires strong passwords via environment variables
 - ✅ **SCRAM-SHA-256 authentication**: PostgreSQL uses secure authentication method
 - ✅ **Dedicated database user**: `reddit_watcher_user` instead of default `postgres`
@@ -16,17 +17,20 @@ The Docker Compose configuration has been completely redesigned with security as
 - ✅ **Read-only monitoring user**: Separate user for monitoring tools
 
 ### 2. **Redis Security**
+
 - ✅ **Password authentication**: Redis requires password for all connections
 - ✅ **Persistence configuration**: Secure data persistence with AOF
 - ✅ **No external exposure**: Redis only accessible via internal network
 
 ### 3. **Network Security**
+
 - ✅ **Custom networks**: Two isolated networks (internal/external)
 - ✅ **Network segmentation**: Database and Redis on internal-only network
 - ✅ **Subnet isolation**: Custom IP ranges for network isolation
 - ✅ **Minimal exposure**: Only necessary services exposed externally
 
 ### 4. **Container Security**
+
 - ✅ **Non-root users**: All services run as non-privileged users
 - ✅ **Security options**: `no-new-privileges` prevents privilege escalation
 - ✅ **Resource limits**: Memory and CPU limits prevent resource exhaustion
@@ -34,6 +38,7 @@ The Docker Compose configuration has been completely redesigned with security as
 - ✅ **Multi-stage builds**: Production images without build dependencies
 
 ### 5. **Secret Management**
+
 - ✅ **Environment variables**: All sensitive data via environment variables
 - ✅ **Required variables**: Docker Compose fails without required secrets
 - ✅ **No hardcoded secrets**: All credentials externalized
@@ -42,11 +47,13 @@ The Docker Compose configuration has been completely redesigned with security as
 ## Configuration Files
 
 ### Production Configuration
+
 - `docker-compose.yml` - Secure production configuration
 - `.env.example` - Template with security placeholders
 - `scripts/generate-secure-env.py` - Secure credential generation
 
 ### Development Configuration
+
 - `docker-compose.dev.yml` - Development overrides
 - `.env.dev` - Development-safe credentials
 
@@ -55,11 +62,13 @@ The Docker Compose configuration has been completely redesigned with security as
 ### Production Deployment
 
 1. **Generate secure credentials**:
+
    ```bash
    python scripts/generate-secure-env.py
    ```
 
 2. **Add your API keys** to the generated `.env` file:
+
    ```bash
    # Edit .env and add your real API keys
    REDDIT_CLIENT_ID=your_actual_reddit_client_id
@@ -68,6 +77,7 @@ The Docker Compose configuration has been completely redesigned with security as
    ```
 
 3. **Deploy securely**:
+
    ```bash
    docker-compose up --build -d
    ```
@@ -75,6 +85,7 @@ The Docker Compose configuration has been completely redesigned with security as
 ### Development Setup
 
 1. **Use development configuration**:
+
    ```bash
    docker-compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.dev up
    ```
@@ -112,18 +123,21 @@ The Docker Compose configuration has been completely redesigned with security as
 ## Security Features
 
 ### Database Layer
+
 - **Encryption**: SCRAM-SHA-256 authentication
 - **Access Control**: User-specific connection limits
 - **Audit Logging**: Statement logging enabled
 - **Monitoring**: Read-only user for metrics collection
 
 ### Application Layer
+
 - **Authentication**: A2A API key authentication
 - **Authorization**: Service-specific environment variables
 - **Resource Limits**: Per-service memory/CPU limits
 - **Health Checks**: Comprehensive service health monitoring
 
 ### Infrastructure Layer
+
 - **Network Isolation**: Internal-only database network
 - **Container Security**: Non-root users, privilege restrictions
 - **Data Persistence**: Secure volume mounting
@@ -144,6 +158,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.d
 ## Monitoring
 
 Health checks are configured for all services:
+
 - **Database**: `pg_isready` with user validation
 - **Redis**: Authenticated ping with password
 - **Agents**: HTTP health endpoints
@@ -176,12 +191,14 @@ Before production deployment, verify:
 ## Emergency Procedures
 
 ### Credential Rotation
+
 1. Generate new credentials: `python scripts/generate-secure-env.py`
 2. Update `.env` file with new values
 3. Restart services: `docker-compose restart`
 4. Verify health: `docker-compose ps`
 
 ### Security Incident Response
+
 1. Stop all services: `docker-compose down`
 2. Review logs: `docker-compose logs`
 3. Rotate all credentials
@@ -191,6 +208,7 @@ Before production deployment, verify:
 ## Support
 
 For security questions or issues:
+
 1. Review this documentation
 2. Check Docker Compose validation
 3. Verify environment variable configuration

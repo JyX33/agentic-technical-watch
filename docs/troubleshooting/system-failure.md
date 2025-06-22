@@ -5,12 +5,14 @@ Complete troubleshooting guide for system-wide failures in the Reddit Technical 
 ## Symptoms
 
 **Complete System Down:**
+
 - No response from any agent endpoint
 - Load balancer returning 503 Service Unavailable
 - All health checks failing
 - Monitoring alerts for all services
 
 **Partial System Down:**
+
 - Some agents responding, others not
 - Database connectivity issues
 - Service discovery failures
@@ -63,6 +65,7 @@ docker network inspect reddit-watcher_default
 #### Docker Daemon Problems
 
 **Check Docker Status:**
+
 ```bash
 # Docker daemon status
 systemctl status docker
@@ -72,6 +75,7 @@ journalctl -u docker.service --since="1 hour ago" --no-pager
 ```
 
 **Common Docker Issues:**
+
 ```bash
 # Disk space exhaustion
 docker system df
@@ -84,6 +88,7 @@ sudo systemctl restart docker
 #### System Resource Exhaustion
 
 **Memory Issues:**
+
 ```bash
 # Check memory usage
 free -h
@@ -95,6 +100,7 @@ journalctl --since="1 hour ago" | grep -i "oom"
 ```
 
 **Disk Space Issues:**
+
 ```bash
 # Check disk usage
 df -h
@@ -107,6 +113,7 @@ sudo logrotate -f /etc/logrotate.conf
 ```
 
 **CPU Issues:**
+
 ```bash
 # Check CPU usage
 top -bn1 | head -20
@@ -120,6 +127,7 @@ cat /proc/loadavg
 #### Network Issues
 
 **Port Conflicts:**
+
 ```bash
 # Check if ports are in use
 netstat -tulpn | grep -E ':(8000|8001|8002|8003|8004|5432|6379)'
@@ -127,6 +135,7 @@ ss -tulpn | grep -E ':(8000|8001|8002|8003|8004|5432|6379)'
 ```
 
 **Firewall Issues:**
+
 ```bash
 # Check firewall rules
 sudo iptables -L -n
@@ -138,6 +147,7 @@ sudo ufw status
 #### Database Connection Failures
 
 **PostgreSQL Status:**
+
 ```bash
 # Check PostgreSQL container
 docker exec postgres-reddit-watcher pg_isready -U postgres
@@ -154,6 +164,7 @@ docker exec postgres-reddit-watcher psql -U postgres -c "
 ```
 
 **Database Recovery:**
+
 ```bash
 # Stop all agents first
 docker-compose stop coordinator-agent retrieval-agent filter-agent summarise-agent alert-agent
@@ -174,6 +185,7 @@ docker-compose start coordinator-agent retrieval-agent filter-agent summarise-ag
 #### Redis Service Discovery Failures
 
 **Redis Status:**
+
 ```bash
 # Check Redis container
 docker exec redis-reddit-watcher redis-cli ping
@@ -186,6 +198,7 @@ docker exec redis-reddit-watcher redis-cli info memory
 ```
 
 **Redis Recovery:**
+
 ```bash
 # Restart Redis
 docker-compose restart redis
@@ -200,6 +213,7 @@ docker exec redis-reddit-watcher redis-cli FLUSHALL
 #### Agent Process Failures
 
 **Check Agent Logs:**
+
 ```bash
 # Check all agent logs for errors
 docker-compose logs --since=1h | grep -i "error\|exception\|fatal"
@@ -209,6 +223,7 @@ docker-compose logs coordinator-agent --tail=100
 ```
 
 **Check Agent Resources:**
+
 ```bash
 # Check container resource usage
 docker stats --no-stream
@@ -222,6 +237,7 @@ docker inspect coordinator-agent | jq '.[0].State.Health'
 #### Environment Variable Problems
 
 **Check Configuration:**
+
 ```bash
 # Verify environment files exist
 ls -la .env* config/
@@ -236,6 +252,7 @@ docker-compose config | grep -E "(DATABASE_URL|REDIS_URL|API_KEY)"
 #### SSL/TLS Certificate Issues
 
 **Check Certificates:**
+
 ```bash
 # Check certificate expiration
 openssl x509 -in /etc/ssl/certs/reddit-watcher.pem -noout -dates
@@ -438,16 +455,19 @@ vim docs/runbooks/system-health-monitoring.md
 ## Emergency Contacts
 
 ### Critical Escalation
+
 - **On-Call Engineer**: +1-555-ONCALL
 - **System Administrator**: +1-555-SYSADMIN
 - **Database Administrator**: +1-555-DBA
 
 ### Communication Channels
+
 - **Slack**: #reddit-watcher-incidents
-- **Email**: incidents@company.com
-- **Status Page**: https://status.company.com
+- **Email**: <incidents@company.com>
+- **Status Page**: <https://status.company.com>
 
 ### External Support
+
 - **Cloud Provider**: Support ticket system
 - **CDN Provider**: Emergency support line
 - **Monitoring Service**: Support chat

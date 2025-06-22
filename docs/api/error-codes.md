@@ -22,6 +22,7 @@ All API errors follow a consistent JSON format:
 ## HTTP Status Codes
 
 ### 2xx Success
+
 - `200 OK` - Request successful
 - `201 Created` - Resource created successfully
 - `202 Accepted` - Request accepted for processing
@@ -29,9 +30,11 @@ All API errors follow a consistent JSON format:
 ### 4xx Client Errors
 
 #### 400 Bad Request
+
 **Cause:** Invalid request format or parameters
 
 **Common Examples:**
+
 ```json
 {
   "error": "Invalid request format",
@@ -41,14 +44,17 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Validate JSON syntax
 - Check required parameters
 - Verify parameter types
 
 #### 401 Unauthorized
+
 **Cause:** Missing or invalid authentication
 
 **Common Examples:**
+
 ```json
 {
   "error": "Authentication required",
@@ -58,14 +64,17 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Add `X-API-Key` or `Authorization` header
 - Verify API key/token validity
 - Check authentication configuration
 
 #### 403 Forbidden
+
 **Cause:** Valid authentication but insufficient permissions
 
 **Common Examples:**
+
 ```json
 {
   "error": "Insufficient permissions",
@@ -75,14 +84,17 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Check user permissions
 - Verify API key scope
 - Contact administrator
 
 #### 404 Not Found
+
 **Cause:** Endpoint or resource not found
 
 **Common Examples:**
+
 ```json
 {
   "error": "Skill not found",
@@ -92,14 +104,17 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Check endpoint URL spelling
 - Verify skill names using `/skills` endpoint
 - Check agent type and capabilities
 
 #### 422 Unprocessable Entity
+
 **Cause:** Valid request format but invalid data
 
 **Common Examples:**
+
 ```json
 {
   "error": "Validation error",
@@ -114,14 +129,17 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Check parameter constraints
 - Validate data types and ranges
 - Review API documentation
 
 #### 429 Too Many Requests
+
 **Cause:** Rate limit exceeded
 
 **Common Examples:**
+
 ```json
 {
   "error": "Rate limit exceeded",
@@ -137,6 +155,7 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Wait for rate limit reset
 - Implement exponential backoff
 - Check rate limit headers
@@ -145,9 +164,11 @@ All API errors follow a consistent JSON format:
 ### 5xx Server Errors
 
 #### 500 Internal Server Error
+
 **Cause:** Unexpected server error
 
 **Common Examples:**
+
 ```json
 {
   "error": "Internal server error",
@@ -157,14 +178,17 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Check server logs
 - Retry request after delay
 - Contact support if persistent
 
 #### 502 Bad Gateway
+
 **Cause:** Agent communication failure
 
 **Common Examples:**
+
 ```json
 {
   "error": "Agent communication failed",
@@ -174,14 +198,17 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Check agent service status
 - Verify network connectivity
 - Check service discovery
 
 #### 503 Service Unavailable
+
 **Cause:** Agent temporarily unavailable
 
 **Common Examples:**
+
 ```json
 {
   "error": "Service unavailable",
@@ -194,14 +221,17 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Wait and retry request
 - Check agent health status
 - Verify resource availability
 
 #### 504 Gateway Timeout
+
 **Cause:** Agent response timeout
 
 **Common Examples:**
+
 ```json
 {
   "error": "Request timeout",
@@ -211,6 +241,7 @@ All API errors follow a consistent JSON format:
 ```
 
 **Resolution:**
+
 - Reduce request complexity
 - Increase timeout configuration
 - Check agent performance
@@ -222,6 +253,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### Standard JSON-RPC Errors
 
 #### -32700 Parse Error
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -235,6 +267,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### -32600 Invalid Request
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -248,6 +281,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### -32601 Method Not Found
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -261,6 +295,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### -32602 Invalid Params
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -274,6 +309,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### -32603 Internal Error
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -289,6 +325,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### Custom A2A Error Codes
 
 #### -32001 Task Not Found
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -302,6 +339,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### -32002 Task Already Cancelled
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -315,6 +353,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### -32003 Push Notification Not Supported
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -327,6 +366,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### -32004 Streaming Not Supported
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -343,6 +383,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### Retrieval Agent Errors
 
 #### Reddit API Errors
+
 ```json
 {
   "error": "Reddit API error",
@@ -356,6 +397,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### Authentication Errors
+
 ```json
 {
   "error": "Reddit authentication failed",
@@ -367,6 +409,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### Filter Agent Errors
 
 #### Relevance Calculation Errors
+
 ```json
 {
   "error": "Relevance calculation failed",
@@ -382,6 +425,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### Summarise Agent Errors
 
 #### Gemini API Errors
+
 ```json
 {
   "error": "Gemini API error",
@@ -395,6 +439,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### Content Too Large
+
 ```json
 {
   "error": "Content too large",
@@ -410,6 +455,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### Alert Agent Errors
 
 #### Notification Delivery Errors
+
 ```json
 {
   "error": "Notification delivery failed",
@@ -423,6 +469,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ```
 
 #### Invalid Recipients
+
 ```json
 {
   "error": "Invalid recipients",
@@ -434,6 +481,7 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### Coordinator Agent Errors
 
 #### Workflow Errors
+
 ```json
 {
   "error": "Workflow execution failed",
@@ -452,24 +500,28 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### General Troubleshooting Steps
 
 1. **Check Request Format**
+
    ```bash
    # Validate JSON syntax
    echo '{"method":"test"}' | python -m json.tool
    ```
 
 2. **Verify Authentication**
+
    ```bash
    # Test authentication
    curl -H "X-API-Key: your-key" http://localhost:8000/health
    ```
 
 3. **Check Agent Status**
+
    ```bash
    # Check all agents
    curl http://localhost:8000/discover
    ```
 
 4. **Review Logs**
+
    ```bash
    # Check agent logs
    docker-compose logs retrieval-agent
@@ -478,12 +530,15 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ### Error-Specific Troubleshooting
 
 #### Rate Limiting (429)
+
 1. Check current rate limit status
+
    ```bash
    curl -I http://localhost:8000/health
    ```
 
 2. Implement exponential backoff
+
    ```python
    import time
    import random
@@ -499,13 +554,16 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
    ```
 
 #### Service Unavailable (503)
+
 1. Check agent health
+
    ```bash
    curl http://localhost:8001/health  # Retrieval agent
    curl http://localhost:8002/health  # Filter agent
    ```
 
 2. Verify dependencies
+
    ```bash
    # Check Redis
    redis-cli ping
@@ -515,13 +573,16 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
    ```
 
 #### Authentication Errors (401)
+
 1. Verify environment variables
+
    ```bash
    echo $A2A_API_KEY
    echo $A2A_BEARER_TOKEN
    ```
 
 2. Test authentication
+
    ```bash
    # API Key
    curl -H "X-API-Key: $A2A_API_KEY" http://localhost:8000/health
@@ -533,19 +594,24 @@ For A2A protocol endpoints (`/a2a`), JSON-RPC 2.0 error codes are used:
 ## Monitoring & Alerting
 
 ### Error Rate Monitoring
+
 Set up monitoring for error rates:
+
 - 4xx errors > 5% of total requests
 - 5xx errors > 1% of total requests
 - Consecutive 503 errors > 3
 
 ### Log Analysis
+
 Key error patterns to monitor:
+
 - Authentication failures
 - Rate limit violations
 - Agent communication failures
 - Database connection errors
 
 ### Alert Configuration
+
 ```yaml
 # Example Prometheus alert rules
 groups:

@@ -17,6 +17,7 @@ This comprehensive guide covers the complete production deployment process for t
 ### System Requirements
 
 **Minimum Production Requirements:**
+
 - **CPU**: 4 cores (8 recommended)
 - **RAM**: 8GB (16GB recommended)
 - **Storage**: 100GB SSD (500GB recommended)
@@ -24,6 +25,7 @@ This comprehensive guide covers the complete production deployment process for t
 - **OS**: Ubuntu 20.04 LTS or CentOS 8+
 
 **Software Dependencies:**
+
 - Docker 24.0+
 - Docker Compose 2.20+
 - curl
@@ -33,6 +35,7 @@ This comprehensive guide covers the complete production deployment process for t
 ### Network Requirements
 
 **Required Ports:**
+
 - `80/443`: HTTP/HTTPS (Traefik)
 - `8000-8004`: Agent APIs (internal)
 - `3000`: Grafana Dashboard
@@ -40,6 +43,7 @@ This comprehensive guide covers the complete production deployment process for t
 - `9093`: Alertmanager
 
 **External Access Required:**
+
 - Reddit API (`reddit.com`)
 - Google Gemini API (`generativelanguage.googleapis.com`)
 - SMTP server (for email alerts)
@@ -117,12 +121,14 @@ nano .env.prod
 **Critical Configuration Items:**
 
 1. **Database Security:**
+
    ```env
    DB_PASSWORD=<generate-strong-password>
    REDIS_PASSWORD=<generate-strong-password>
    ```
 
 2. **API Credentials:**
+
    ```env
    REDDIT_CLIENT_ID=<reddit-app-client-id>
    REDDIT_CLIENT_SECRET=<reddit-app-client-secret>
@@ -131,12 +137,14 @@ nano .env.prod
    ```
 
 3. **Monitoring:**
+
    ```env
    GRAFANA_ADMIN_PASSWORD=<generate-strong-password>
    ALERTMANAGER_WEBHOOK_TOKEN=<generate-strong-token>
    ```
 
 4. **Notifications:**
+
    ```env
    ALERT_EMAIL=alerts@yourdomain.com
    SMTP_SERVER=smtp.yourdomain.com
@@ -145,6 +153,7 @@ nano .env.prod
    ```
 
 5. **SSL/Domain:**
+
    ```env
    DOMAIN=yourdomain.com
    ACME_EMAIL=admin@yourdomain.com
@@ -255,9 +264,9 @@ SELECT version_num FROM alembic_version;
 
 ### 4. Monitoring Stack Verification
 
-- **Grafana**: http://localhost:3000 (admin / `$GRAFANA_ADMIN_PASSWORD`)
-- **Prometheus**: http://localhost:9090
-- **Alertmanager**: http://localhost:9093
+- **Grafana**: <http://localhost:3000> (admin / `$GRAFANA_ADMIN_PASSWORD`)
+- **Prometheus**: <http://localhost:9090>
+- **Alertmanager**: <http://localhost:9093>
 
 ### 5. End-to-End Testing
 
@@ -284,7 +293,7 @@ asyncio.run(test())
 
 ### 1. Configure Grafana Dashboards
 
-1. Access Grafana at http://localhost:3000
+1. Access Grafana at <http://localhost:3000>
 2. Login with admin credentials
 3. Verify dashboards are loaded:
    - **Reddit Watcher - System Overview**
@@ -293,13 +302,14 @@ asyncio.run(test())
 
 ### 2. Configure Alerting
 
-1. Verify Prometheus targets: http://localhost:9090/targets
-2. Check alert rules: http://localhost:9090/alerts
-3. Test Alertmanager: http://localhost:9093
+1. Verify Prometheus targets: <http://localhost:9090/targets>
+2. Check alert rules: <http://localhost:9090/alerts>
+3. Test Alertmanager: <http://localhost:9093>
 
 ### 3. Set Up External Monitoring
 
 **Uptime Monitoring:**
+
 ```bash
 # Configure external uptime monitoring for:
 # - https://yourdomain.com/health
@@ -308,6 +318,7 @@ asyncio.run(test())
 ```
 
 **Log Aggregation:**
+
 ```bash
 # Configure log forwarding to external service
 # Docker logs are available at:
@@ -319,6 +330,7 @@ docker-compose -f docker-compose.prod.yml logs --since 1h
 ### Common Issues
 
 **1. Services Won't Start**
+
 ```bash
 # Check Docker daemon
 sudo systemctl status docker
@@ -334,6 +346,7 @@ docker-compose -f docker-compose.prod.yml logs [service-name]
 ```
 
 **2. Database Connection Issues**
+
 ```bash
 # Check database is running
 docker-compose -f docker-compose.prod.yml ps db
@@ -346,6 +359,7 @@ docker-compose -f docker-compose.prod.yml logs db
 ```
 
 **3. Agent Communication Issues**
+
 ```bash
 # Check Redis connectivity
 docker-compose -f docker-compose.prod.yml exec redis redis-cli ping
@@ -358,6 +372,7 @@ docker-compose -f docker-compose.prod.yml logs coordinator-agent | grep -i a2a
 ```
 
 **4. Monitoring Issues**
+
 ```bash
 # Check Prometheus targets
 curl http://localhost:9090/api/v1/targets
@@ -372,6 +387,7 @@ curl http://localhost:9093/api/v1/status
 ### Performance Tuning
 
 **1. Resource Optimization**
+
 ```bash
 # Monitor resource usage
 docker stats
@@ -382,6 +398,7 @@ docker-compose -f docker-compose.prod.yml up -d --scale retrieval-agent=2
 ```
 
 **2. Database Performance**
+
 ```bash
 # Monitor database performance
 docker-compose -f docker-compose.prod.yml exec db \
@@ -424,6 +441,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ### 3. Emergency Procedures
 
 **Complete System Failure:**
+
 ```bash
 # 1. Stop all services
 docker-compose -f docker-compose.prod.yml down
@@ -501,8 +519,8 @@ sudo apt update && sudo apt upgrade
 ## Support and Documentation
 
 - **System Logs**: `docker-compose -f docker-compose.prod.yml logs`
-- **Monitoring**: http://localhost:3000
-- **Health Status**: http://localhost:8000/health
+- **Monitoring**: <http://localhost:3000>
+- **Health Status**: <http://localhost:8000/health>
 - **Runbooks**: `/docs/runbooks/`
 - **Configuration**: `/docs/operations/`
 

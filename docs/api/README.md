@@ -57,12 +57,14 @@ All agents implement Google's Agent-to-Agent (A2A) protocol:
 ## Development vs Production
 
 ### Development Environment
+
 - No authentication required by default
 - Detailed error messages and stack traces
 - CORS allows all origins
 - Enhanced logging and debugging
 
 ### Production Environment
+
 - Authentication required for all endpoints
 - Sanitized error messages
 - Restricted CORS origins

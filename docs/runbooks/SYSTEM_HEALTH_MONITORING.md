@@ -151,6 +151,7 @@ fi
 ### Individual Service Health
 
 **Coordinator Agent:**
+
 ```bash
 # Health endpoint
 curl -s http://localhost:8000/health | jq .
@@ -166,6 +167,7 @@ docker-compose -f docker-compose.prod.yml logs coordinator-agent | grep -i "work
 ```
 
 **Retrieval Agent:**
+
 ```bash
 # Health and last Reddit fetch
 curl -s http://localhost:8001/health | jq .
@@ -185,6 +187,7 @@ print('Reddit API Status:', reddit.auth.limits)
 ```
 
 **Filter Agent:**
+
 ```bash
 # Health and filtering metrics
 curl -s http://localhost:8002/health | jq .
@@ -201,6 +204,7 @@ print(f'Gemini API Status: {len(models)} models available')
 ```
 
 **Summarise Agent:**
+
 ```bash
 # Health and summarization metrics
 curl -s http://localhost:8003/health | jq .
@@ -210,6 +214,7 @@ docker-compose -f docker-compose.prod.yml logs summarise-agent | grep -i "summar
 ```
 
 **Alert Agent:**
+
 ```bash
 # Health and alert delivery status
 curl -s http://localhost:8004/health | jq .
@@ -240,6 +245,7 @@ else:
 ### Infrastructure Monitoring
 
 **Database Monitoring:**
+
 ```bash
 # Connection status
 docker-compose -f docker-compose.prod.yml exec db psql -U reddit_watcher_user -d reddit_watcher -c "
@@ -263,6 +269,7 @@ ORDER BY total_time DESC LIMIT 5;"
 ```
 
 **Redis Monitoring:**
+
 ```bash
 # Redis info
 docker-compose -f docker-compose.prod.yml exec redis redis-cli --no-auth-warning -a "$REDIS_PASSWORD" info
@@ -282,6 +289,7 @@ docker-compose -f docker-compose.prod.yml exec redis redis-cli --no-auth-warning
 ### System Performance
 
 **Resource Utilization:**
+
 ```bash
 # Real-time system monitoring
 htop
@@ -300,6 +308,7 @@ uptime
 ```
 
 **Container Performance:**
+
 ```bash
 # Container resource usage
 docker stats
@@ -314,6 +323,7 @@ docker-compose -f docker-compose.prod.yml logs -t --since 1h coordinator-agent
 ### Application Performance
 
 **Response Time Monitoring:**
+
 ```bash
 # Test endpoint response times
 time curl -s http://localhost:8000/health > /dev/null
@@ -326,6 +336,7 @@ time curl -X POST -H "Content-Type: application/json" \
 ```
 
 **Database Performance:**
+
 ```bash
 # Connection pool usage
 docker-compose -f docker-compose.prod.yml exec db psql -U reddit_watcher_user -d reddit_watcher -c "
@@ -350,6 +361,7 @@ ORDER BY tablename, attname;"
 ### Critical Alerts
 
 **Agent Down Alert:**
+
 ```bash
 # 1. Identify which agent is down
 docker-compose -f docker-compose.prod.yml ps | grep -v "Up"
@@ -372,6 +384,7 @@ docker-compose -f docker-compose.prod.yml up -d [agent-name]
 ```
 
 **Database Down Alert:**
+
 ```bash
 # 1. Check database container status
 docker-compose -f docker-compose.prod.yml ps db
@@ -391,6 +404,7 @@ docker-compose -f docker-compose.prod.yml restart db
 ```
 
 **High Error Rate Alert:**
+
 ```bash
 # 1. Identify error sources
 docker-compose -f docker-compose.prod.yml logs --since 1h | grep -i error | sort | uniq -c | sort -nr
@@ -414,6 +428,7 @@ docker-compose -f docker-compose.prod.yml restart [affected-services]
 ### Warning Alerts
 
 **High Response Time:**
+
 ```bash
 # 1. Check system load
 top -bn1 | head -5
@@ -433,6 +448,7 @@ docker-compose -f docker-compose.prod.yml up -d --scale retrieval-agent=2
 ```
 
 **High Memory Usage:**
+
 ```bash
 # 1. Identify memory consumers
 ps aux --sort=-%mem | head -10
@@ -455,11 +471,13 @@ docker system prune -f
 ### Service Discovery Issues
 
 **Symptoms:**
+
 - Agents can't find each other
 - A2A communication failures
 - Empty `/discover` endpoint response
 
 **Resolution:**
+
 ```bash
 # 1. Check Redis connectivity
 docker-compose -f docker-compose.prod.yml exec redis redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping
@@ -482,11 +500,13 @@ docker-compose -f docker-compose.prod.yml restart coordinator-agent retrieval-ag
 ### Network Connectivity Issues
 
 **Symptoms:**
+
 - External API failures
 - Inter-agent communication failures
 - Health checks failing
 
 **Resolution:**
+
 ```bash
 # 1. Check network connectivity
 ping 8.8.8.8
@@ -515,11 +535,13 @@ docker-compose -f docker-compose.prod.yml up -d
 ### Performance Degradation
 
 **Symptoms:**
+
 - Slow response times
 - High CPU/memory usage
 - Workflow delays
 
 **Resolution:**
+
 ```bash
 # 1. Identify bottlenecks
 docker stats --no-stream
@@ -549,6 +571,7 @@ docker-compose -f docker-compose.prod.yml up -d --scale filter-agent=2 --scale s
 ### Level 1: Automated Response
 
 **Automated actions:**
+
 - Service restarts via health check scripts
 - Circuit breaker activation
 - Resource cleanup
@@ -557,12 +580,14 @@ docker-compose -f docker-compose.prod.yml up -d --scale filter-agent=2 --scale s
 ### Level 2: On-Call Engineer
 
 **Escalation triggers:**
+
 - Multiple service failures
 - Database connectivity issues
 - External API failures lasting > 15 minutes
 - Data corruption
 
 **Actions:**
+
 1. Assess system state using health check procedures
 2. Attempt service restarts and basic troubleshooting
 3. Check monitoring dashboards for patterns
@@ -572,12 +597,14 @@ docker-compose -f docker-compose.prod.yml up -d --scale filter-agent=2 --scale s
 ### Level 3: Senior Engineer/Architect
 
 **Escalation triggers:**
+
 - System-wide outages
 - Data loss incidents
 - Security breaches
 - Complex architectural issues
 
 **Actions:**
+
 1. Full system assessment
 2. Coordinate with external services (Reddit, Google)
 3. Decide on rollback vs. forward fix
@@ -600,6 +627,7 @@ External Support:
 ### Emergency Procedures
 
 **Complete System Failure:**
+
 ```bash
 # 1. Immediate assessment
 ./deploy_production.sh status
@@ -626,6 +654,7 @@ echo "System restoration in progress" | mail -s "Reddit Watcher System Alert" em
 ### Scheduled Maintenance
 
 **Weekly Maintenance (Sunday 2 AM):**
+
 ```bash
 # 1. Create backup
 ./deploy_production.sh backup
@@ -645,6 +674,7 @@ docker volume prune -f --filter "label!=keep"
 ```
 
 **Monthly Maintenance:**
+
 ```bash
 # 1. Security updates
 sudo apt update && sudo apt upgrade -y

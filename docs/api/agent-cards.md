@@ -5,6 +5,7 @@ Agent Cards are JSON documents that describe each agent's capabilities, endpoint
 ## Agent Card Endpoint
 
 Every agent exposes its Agent Card at:
+
 ```
 GET /.well-known/agent.json
 ```
@@ -57,6 +58,7 @@ GET /.well-known/agent.json
 ## Agent-Specific Cards
 
 ### Coordinator Agent Card
+
 ```json
 {
   "name": "Reddit Technical Watcher Coordinator",
@@ -86,6 +88,7 @@ GET /.well-known/agent.json
 ```
 
 ### Retrieval Agent Card
+
 ```json
 {
   "name": "Reddit Retrieval Agent",
@@ -121,6 +124,7 @@ GET /.well-known/agent.json
 ```
 
 ### Filter Agent Card
+
 ```json
 {
   "name": "Reddit Filter Agent",
@@ -157,6 +161,7 @@ GET /.well-known/agent.json
 ```
 
 ### Summarise Agent Card
+
 ```json
 {
   "name": "Reddit Summarise Agent",
@@ -190,6 +195,7 @@ GET /.well-known/agent.json
 ```
 
 ### Alert Agent Card
+
 ```json
 {
   "name": "Reddit Alert Agent",
@@ -226,6 +232,7 @@ GET /.well-known/agent.json
 ## Using Agent Cards
 
 ### Service Discovery
+
 ```bash
 # Discover all agents
 curl http://localhost:8000/discover
@@ -235,6 +242,7 @@ curl http://localhost:8001/.well-known/agent.json
 ```
 
 ### Validation
+
 All Agent Cards should be validated against the A2A specification:
 
 - Required fields: `name`, `description`, `version`, `url`, `skills`
@@ -243,6 +251,7 @@ All Agent Cards should be validated against the A2A specification:
 - Valid capability declarations
 
 ### Dynamic Integration
+
 Agent Cards enable:
 
 1. **Automatic skill discovery** - Find available capabilities
