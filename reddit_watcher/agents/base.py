@@ -3,6 +3,7 @@
 
 import json
 import logging
+import time
 from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
@@ -19,6 +20,9 @@ from reddit_watcher.a2a_protocol import (
     RequestContext,
     new_agent_text_message,
 )
+from reddit_watcher.observability.health import create_health_monitor
+from reddit_watcher.observability.logging import get_logger
+from reddit_watcher.observability.metrics import get_metrics_collector
 
 logger = logging.getLogger(__name__)
 
@@ -85,20 +89,64 @@ class BaseA2AAgent(ABC):
         self.name = name
         self.description = description
         self.version = version
-        self.logger = logging.getLogger(f"{__name__}.{agent_type}")
+
+        # Initialize observability components
+        self.logger = get_logger(f"{__name__}.{agent_type}", agent_type)
+        self.metrics = get_metrics_collector(agent_type)
+        self.health_monitor = create_health_monitor(f"{agent_type}_agent", version)
+        self.start_time = time.time()
 
     async def __aenter__(self):
         """Async context manager entry. Override in subclasses for resource initialization."""
+        # Start health monitoring
+        await self.health_monitor.start_monitoring()
+        self.logger.info(f"Agent {self.agent_type} started and monitoring initialized")
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit. Override in subclasses for resource cleanup."""
+        # Stop health monitoring
+        await self.health_monitor.stop_monitoring()
         await self.cleanup_resources()
+        self.logger.info(f"Agent {self.agent_type} stopped and resources cleaned up")
 
     async def cleanup_resources(self):
         """Cleanup any resources held by this agent. Override in subclasses."""
+        # Record uptime metrics before cleanup
+        uptime = time.time() - self.start_time
+        self.metrics.process_uptime_seconds = uptime
         # Default implementation does nothing - subclasses should override
         return
+
+    async def get_health_status(self) -> dict[str, Any]:
+        """
+        Get comprehensive health status for this agent.
+
+        Returns:
+            Dictionary containing health status information
+        """
+        health = self.health_monitor.get_service_health()
+        return {
+            "agent_type": self.agent_type,
+            "status": health.overall_status.value,
+            "uptime_seconds": time.time() - self.start_time,
+            "version": self.version,
+            "health_checks": health.to_dict(),
+            "metrics_available": True,
+        }
+
+    @abstractmethod
+    async def get_agent_specific_health(self) -> dict[str, Any]:
+        """
+        Get agent-specific health information.
+
+        Each agent should implement this to provide specific health data
+        such as API connectivity, processing queues, etc.
+
+        Returns:
+            Dictionary containing agent-specific health information
+        """
+        pass
 
     @abstractmethod
     def get_skills(self) -> list[AgentSkill]:

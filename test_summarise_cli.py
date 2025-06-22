@@ -9,6 +9,7 @@ including content summarization, rate limiting, and extractive fallback function
 import asyncio
 
 from reddit_watcher.agents.summarise_agent import SummariseAgent
+from reddit_watcher.config import create_config
 
 
 async def test_agent_initialization():
@@ -17,7 +18,8 @@ async def test_agent_initialization():
     print("Testing SummariseAgent Initialization")
     print("=" * 60)
 
-    agent = SummariseAgent()
+    config = create_config()
+    agent = SummariseAgent(config)
 
     print(f"Agent Type: {agent.agent_type}")
     print(f"Agent Name: {agent.name}")
@@ -33,7 +35,8 @@ async def test_get_skills():
     print("Testing Agent Skills")
     print("=" * 60)
 
-    agent = SummariseAgent()
+    config = create_config()
+    agent = SummariseAgent(config)
     skills = agent.get_skills()
 
     print(f"Number of skills: {len(skills)}")
@@ -53,7 +56,8 @@ async def test_health_status():
     print("Testing Health Status")
     print("=" * 60)
 
-    agent = SummariseAgent()
+    config = create_config()
+    agent = SummariseAgent(config)
     health = agent.get_health_status()
 
     print("Health Status:")
@@ -68,7 +72,8 @@ async def test_content_summarization():
     print("Testing Content Summarization")
     print("=" * 60)
 
-    agent = SummariseAgent()
+    config = create_config()
+    agent = SummariseAgent(config)
 
     # Test cases with different content lengths and types
     test_cases = [
@@ -137,7 +142,8 @@ async def test_error_handling():
     print("Testing Error Handling")
     print("=" * 60)
 
-    agent = SummariseAgent()
+    config = create_config()
+    agent = SummariseAgent(config)
 
     error_test_cases = [
         {
@@ -171,7 +177,8 @@ async def test_content_chunking():
     print("Testing Content Chunking")
     print("=" * 60)
 
-    agent = SummariseAgent()
+    config = create_config()
+    agent = SummariseAgent(config)
 
     # Test with different chunk sizes
     test_content = "This is a test sentence. " * 100  # Creates ~2500 character content
@@ -197,7 +204,8 @@ async def test_extractive_summarization():
     print("Testing Extractive Summarization")
     print("=" * 60)
 
-    agent = SummariseAgent()
+    config = create_config()
+    agent = SummariseAgent(config)
 
     test_content = "First sentence about AI. Second sentence discusses machine learning. Third sentence covers neural networks. Fourth sentence explains deep learning. Fifth sentence mentions transformers."
 

@@ -1,0 +1,1076 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Reddit Technical Watcher Business Metrics and Operational Insights Dashboard",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": ["reddit-watcher"],
+      "targetBlank": true,
+      "title": "System Overview",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "description": "Key performance indicators for Reddit Technical Watcher system",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "value"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "System Health"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 80
+                    },
+                    {
+                      "color": "green",
+                      "value": 95
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "count(up{job=~\".*-agent\"} == 1) / count(up{job=~\".*-agent\"}) * 100",
+          "interval": "",
+          "legendFormat": "System Health",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(reddit_watcher_reddit_posts_processed_total[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Posts/min",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(reddit_watcher_alert_delivery_operations_total{status=\"success\"}[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Alerts/min",
+          "refId": "C"
+        },
+        {
+          "expr": "reddit_watcher_workflow_last_completion_timestamp > 0",
+          "interval": "",
+          "legendFormat": "Last Workflow",
+          "refId": "D"
+        }
+      ],
+      "title": "Key Performance Indicators",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Reddit data collection and processing metrics",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(reddit_watcher_reddit_posts_processed_total[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Posts per minute - {{subreddit}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(reddit_watcher_reddit_comments_processed_total[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Comments per minute - {{subreddit}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Reddit Data Collection Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Content filtering effectiveness and relevance metrics",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Filtered"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Relevant"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(reddit_watcher_content_filter_operations_total{result=\"relevant\"}[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Relevant",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(reddit_watcher_content_filter_operations_total{result=\"filtered\"}[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Filtered",
+          "refId": "B"
+        }
+      ],
+      "title": "Content Filtering Results",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Distribution of content relevance scores",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 12
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "visible",
+          "placement": "right"
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.1, reddit_watcher_content_relevance_score)",
+          "interval": "",
+          "legendFormat": "0.0-0.1",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.3, reddit_watcher_content_relevance_score) - histogram_quantile(0.1, reddit_watcher_content_relevance_score)",
+          "interval": "",
+          "legendFormat": "0.1-0.3",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.5, reddit_watcher_content_relevance_score) - histogram_quantile(0.3, reddit_watcher_content_relevance_score)",
+          "interval": "",
+          "legendFormat": "0.3-0.5",
+          "refId": "C"
+        },
+        {
+          "expr": "histogram_quantile(0.7, reddit_watcher_content_relevance_score) - histogram_quantile(0.5, reddit_watcher_content_relevance_score)",
+          "interval": "",
+          "legendFormat": "0.5-0.7",
+          "refId": "D"
+        },
+        {
+          "expr": "histogram_quantile(0.9, reddit_watcher_content_relevance_score) - histogram_quantile(0.7, reddit_watcher_content_relevance_score)",
+          "interval": "",
+          "legendFormat": "0.7-0.9",
+          "refId": "E"
+        },
+        {
+          "expr": "histogram_quantile(1.0, reddit_watcher_content_relevance_score) - histogram_quantile(0.9, reddit_watcher_content_relevance_score)",
+          "interval": "",
+          "legendFormat": "0.9-1.0",
+          "refId": "F"
+        }
+      ],
+      "title": "Content Relevance Score Distribution",
+      "type": "piechart"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Alert delivery success rates and failure analysis",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 12
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(reddit_watcher_alert_delivery_operations_total{status=\"success\"}[5m]) / rate(reddit_watcher_alert_delivery_operations_total[5m])",
+          "interval": "",
+          "legendFormat": "Success Rate - {{channel}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Alert Delivery Success Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "External API performance and reliability",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 12
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(reddit_watcher_reddit_api_requests_total{status=\"200\"}[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Reddit API Success/min",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(reddit_watcher_gemini_api_requests_total{status=\"success\"}[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Gemini API Success/min",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(reddit_watcher_slack_webhook_requests_total{status=\"200\"}[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Slack Webhook Success/min",
+          "refId": "C"
+        }
+      ],
+      "title": "External API Performance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Workflow execution times and success rates",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(reddit_watcher_workflow_duration_seconds_bucket[5m]))",
+          "interval": "",
+          "legendFormat": "Workflow Duration P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(reddit_watcher_workflow_duration_seconds_bucket[5m]))",
+          "interval": "",
+          "legendFormat": "Workflow Duration P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(reddit_watcher_workflow_duration_seconds_bucket[5m]))",
+          "interval": "",
+          "legendFormat": "Workflow Duration P99",
+          "refId": "C"
+        }
+      ],
+      "title": "Workflow Execution Times",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "A2A skill execution performance by agent and skill",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(reddit_watcher_a2a_skill_execution_duration_seconds_bucket[5m]))",
+          "interval": "",
+          "legendFormat": "{{agent_type}}.{{skill}} P95",
+          "refId": "A"
+        }
+      ],
+      "title": "A2A Skill Execution Performance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Business process health and data freshness",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "value"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Stale"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Fresh"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Minutes Since Last Reddit Fetch"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "m"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "red",
+                      "value": 30
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Minutes Since Last Workflow"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "m"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 60
+                    },
+                    {
+                      "color": "red",
+                      "value": 240
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "(time() - reddit_watcher_reddit_last_successful_fetch_timestamp) / 60",
+          "interval": "",
+          "legendFormat": "Minutes Since Last Reddit Fetch",
+          "refId": "A"
+        },
+        {
+          "expr": "(time() - reddit_watcher_workflow_last_completion_timestamp) / 60",
+          "interval": "",
+          "legendFormat": "Minutes Since Last Workflow",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(reddit_watcher_summarization_operations_total{status=\"success\"}[5m]) / rate(reddit_watcher_summarization_operations_total[5m])",
+          "interval": "",
+          "legendFormat": "Summarization Success Rate",
+          "refId": "C"
+        },
+        {
+          "expr": "count(up{job=~\".*-agent\"} == 1)",
+          "interval": "",
+          "legendFormat": "Healthy Agents",
+          "refId": "D"
+        }
+      ],
+      "title": "Business Process Health",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Error rates and failure analysis across all components",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(reddit_watcher_summarization_failures_total[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Summarization Failures/min - {{error_type}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(reddit_watcher_alert_delivery_failures_total[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Alert Delivery Failures/min - {{channel}}.{{error_type}}",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(reddit_watcher_gemini_api_failures_total[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Gemini API Failures/min - {{error_type}}",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(reddit_watcher_slack_webhook_failures_total[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Slack Webhook Failures/min - {{error_type}}",
+          "refId": "D"
+        },
+        {
+          "expr": "rate(reddit_watcher_reddit_api_rate_limit_exceeded_total[5m]) * 60",
+          "interval": "",
+          "legendFormat": "Reddit API Rate Limits/min",
+          "refId": "E"
+        }
+      ],
+      "title": "Error Rates and Failures",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [
+    "reddit-watcher",
+    "business-metrics",
+    "observability"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Reddit Watcher - Business Metrics & Operational Insights",
+  "uid": "reddit-watcher-business",
+  "version": 1
+}

@@ -556,15 +556,9 @@ class RetrievalAgent(BaseA2AAgent):
                     if not existing_subreddit:
                         subreddit_model = SubredditModel(
                             name=subreddit_data["name"],
-                            title=subreddit_data["title"],
+                            display_name=subreddit_data["title"],
                             description=subreddit_data["description"],
                             subscribers=subreddit_data["subscribers"],
-                            created_utc=datetime.fromtimestamp(
-                                subreddit_data["created_utc"], UTC
-                            ),
-                            over_18=subreddit_data["over_18"],
-                            lang=subreddit_data["lang"],
-                            discovery_topic=topic,
                         )
                         session.add(subreddit_model)
                         stored_count += 1

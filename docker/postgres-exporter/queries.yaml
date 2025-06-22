@@ -1,0 +1,347 @@
+# ABOUTME: Custom PostgreSQL queries for detailed database monitoring
+# ABOUTME: Provides Reddit Watcher specific metrics including table sizes, query performance, and business data
+
+pg_replication:
+  query: "SELECT CASE WHEN NOT pg_is_in_recovery() THEN 0 ELSE GREATEST (0, EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))) END AS lag"
+  master: true
+  metrics:
+    - lag:
+        usage: "GAUGE"
+        description: "Replication lag behind master in seconds"
+
+pg_postmaster:
+  query: "SELECT pg_postmaster_start_time as start_time_seconds from pg_postmaster_start_time()"
+  master: true
+  metrics:
+    - start_time_seconds:
+        usage: "GAUGE"
+        description: "Time at which postmaster started"
+
+pg_stat_user_tables:
+  query: |
+    SELECT
+      current_database() datname,
+      schemaname,
+      relname,
+      seq_scan,
+      seq_tup_read,
+      idx_scan,
+      idx_tup_fetch,
+      n_tup_ins,
+      n_tup_upd,
+      n_tup_del,
+      n_tup_hot_upd,
+      n_live_tup,
+      n_dead_tup,
+      n_mod_since_analyze,
+      COALESCE(last_vacuum, '1970-01-01Z') as last_vacuum,
+      COALESCE(last_autovacuum, '1970-01-01Z') as last_autovacuum,
+      COALESCE(last_analyze, '1970-01-01Z') as last_analyze,
+      COALESCE(last_autoanalyze, '1970-01-01Z') as last_autoanalyze,
+      vacuum_count,
+      autovacuum_count,
+      analyze_count,
+      autoanalyze_count
+    FROM pg_stat_user_tables
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - schemaname:
+        usage: "LABEL"
+        description: "Schema name"
+    - relname:
+        usage: "LABEL"
+        description: "Table name"
+    - seq_scan:
+        usage: "COUNTER"
+        description: "Number of sequential scans initiated on this table"
+    - seq_tup_read:
+        usage: "COUNTER"
+        description: "Number of live rows fetched by sequential scans"
+    - idx_scan:
+        usage: "COUNTER"
+        description: "Number of index scans initiated on this table"
+    - idx_tup_fetch:
+        usage: "COUNTER"
+        description: "Number of live rows fetched by index scans"
+    - n_tup_ins:
+        usage: "COUNTER"
+        description: "Number of rows inserted"
+    - n_tup_upd:
+        usage: "COUNTER"
+        description: "Number of rows updated"
+    - n_tup_del:
+        usage: "COUNTER"
+        description: "Number of rows deleted"
+    - n_tup_hot_upd:
+        usage: "COUNTER"
+        description: "Number of rows HOT updated"
+    - n_live_tup:
+        usage: "GAUGE"
+        description: "Estimated number of live rows"
+    - n_dead_tup:
+        usage: "GAUGE"
+        description: "Estimated number of dead rows"
+    - n_mod_since_analyze:
+        usage: "GAUGE"
+        description: "Estimated number of rows changed since last analyze"
+    - last_vacuum:
+        usage: "GAUGE"
+        description: "Last time at which this table was manually vacuumed"
+    - last_autovacuum:
+        usage: "GAUGE"
+        description: "Last time at which this table was vacuumed by the autovacuum daemon"
+    - last_analyze:
+        usage: "GAUGE"
+        description: "Last time at which this table was manually analyzed"
+    - last_autoanalyze:
+        usage: "GAUGE"
+        description: "Last time at which this table was analyzed by the autovacuum daemon"
+    - vacuum_count:
+        usage: "COUNTER"
+        description: "Number of times this table has been manually vacuumed"
+    - autovacuum_count:
+        usage: "COUNTER"
+        description: "Number of times this table has been vacuumed by the autovacuum daemon"
+    - analyze_count:
+        usage: "COUNTER"
+        description: "Number of times this table has been manually analyzed"
+    - autoanalyze_count:
+        usage: "COUNTER"
+        description: "Number of times this table has been analyzed by the autovacuum daemon"
+
+pg_database:
+  query: |
+    SELECT
+      pg_database.datname,
+      pg_database_size(pg_database.datname) as size_bytes
+    FROM pg_database
+  master: true
+  cache_seconds: 30
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - size_bytes:
+        usage: "GAUGE"
+        description: "Database size in bytes"
+
+# Reddit Watcher specific queries
+reddit_watcher_posts:
+  query: |
+    SELECT
+      COUNT(*) as total_posts,
+      COUNT(CASE WHEN created_at > NOW() - INTERVAL '1 hour' THEN 1 END) as posts_last_hour,
+      COUNT(CASE WHEN created_at > NOW() - INTERVAL '24 hours' THEN 1 END) as posts_last_day,
+      COUNT(CASE WHEN is_relevant = true THEN 1 END) as relevant_posts,
+      AVG(relevance_score) as avg_relevance_score
+    FROM reddit_posts
+    WHERE EXISTS (SELECT 1 FROM reddit_posts LIMIT 1)
+  master: true
+  cache_seconds: 60
+  metrics:
+    - total_posts:
+        usage: "GAUGE"
+        description: "Total number of Reddit posts stored"
+    - posts_last_hour:
+        usage: "GAUGE"
+        description: "Number of posts collected in the last hour"
+    - posts_last_day:
+        usage: "GAUGE"
+        description: "Number of posts collected in the last day"
+    - relevant_posts:
+        usage: "GAUGE"
+        description: "Number of posts marked as relevant"
+    - avg_relevance_score:
+        usage: "GAUGE"
+        description: "Average relevance score of posts"
+
+reddit_watcher_comments:
+  query: |
+    SELECT
+      COUNT(*) as total_comments,
+      COUNT(CASE WHEN created_at > NOW() - INTERVAL '1 hour' THEN 1 END) as comments_last_hour,
+      COUNT(CASE WHEN created_at > NOW() - INTERVAL '24 hours' THEN 1 END) as comments_last_day,
+      COUNT(CASE WHEN is_relevant = true THEN 1 END) as relevant_comments
+    FROM reddit_comments
+    WHERE EXISTS (SELECT 1 FROM reddit_comments LIMIT 1)
+  master: true
+  cache_seconds: 60
+  metrics:
+    - total_comments:
+        usage: "GAUGE"
+        description: "Total number of Reddit comments stored"
+    - comments_last_hour:
+        usage: "GAUGE"
+        description: "Number of comments collected in the last hour"
+    - comments_last_day:
+        usage: "GAUGE"
+        description: "Number of comments collected in the last day"
+    - relevant_comments:
+        usage: "GAUGE"
+        description: "Number of comments marked as relevant"
+
+reddit_watcher_alerts:
+  query: |
+    SELECT
+      COUNT(*) as total_alerts,
+      COUNT(CASE WHEN created_at > NOW() - INTERVAL '1 hour' THEN 1 END) as alerts_last_hour,
+      COUNT(CASE WHEN created_at > NOW() - INTERVAL '24 hours' THEN 1 END) as alerts_last_day,
+      COUNT(CASE WHEN status = 'sent' THEN 1 END) as alerts_sent,
+      COUNT(CASE WHEN status = 'failed' THEN 1 END) as alerts_failed
+    FROM alert_deliveries
+    WHERE EXISTS (SELECT 1 FROM alert_deliveries LIMIT 1)
+  master: true
+  cache_seconds: 60
+  metrics:
+    - total_alerts:
+        usage: "GAUGE"
+        description: "Total number of alerts generated"
+    - alerts_last_hour:
+        usage: "GAUGE"
+        description: "Number of alerts generated in the last hour"
+    - alerts_last_day:
+        usage: "GAUGE"
+        description: "Number of alerts generated in the last day"
+    - alerts_sent:
+        usage: "GAUGE"
+        description: "Number of alerts successfully sent"
+    - alerts_failed:
+        usage: "GAUGE"
+        description: "Number of alerts that failed to send"
+
+reddit_watcher_workflow_executions:
+  query: |
+    SELECT
+      COUNT(*) as total_executions,
+      COUNT(CASE WHEN started_at > NOW() - INTERVAL '1 hour' THEN 1 END) as executions_last_hour,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_executions,
+      COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_executions,
+      AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) as avg_duration_seconds,
+      MAX(EXTRACT(EPOCH FROM (completed_at - started_at))) as max_duration_seconds,
+      EXTRACT(EPOCH FROM (NOW() - MAX(completed_at))) as seconds_since_last_completion
+    FROM workflow_executions
+    WHERE EXISTS (SELECT 1 FROM workflow_executions LIMIT 1)
+  master: true
+  cache_seconds: 30
+  metrics:
+    - total_executions:
+        usage: "GAUGE"
+        description: "Total number of workflow executions"
+    - executions_last_hour:
+        usage: "GAUGE"
+        description: "Number of workflow executions in the last hour"
+    - completed_executions:
+        usage: "GAUGE"
+        description: "Number of completed workflow executions"
+    - failed_executions:
+        usage: "GAUGE"
+        description: "Number of failed workflow executions"
+    - avg_duration_seconds:
+        usage: "GAUGE"
+        description: "Average workflow execution duration in seconds"
+    - max_duration_seconds:
+        usage: "GAUGE"
+        description: "Maximum workflow execution duration in seconds"
+    - seconds_since_last_completion:
+        usage: "GAUGE"
+        description: "Seconds since last successful workflow completion"
+
+reddit_watcher_agent_states:
+  query: |
+    SELECT
+      agent_type,
+      COUNT(*) as agent_count,
+      COUNT(CASE WHEN last_heartbeat > NOW() - INTERVAL '5 minutes' THEN 1 END) as healthy_agents,
+      EXTRACT(EPOCH FROM (NOW() - MAX(last_heartbeat))) as seconds_since_last_heartbeat
+    FROM agent_states
+    WHERE EXISTS (SELECT 1 FROM agent_states LIMIT 1)
+    GROUP BY agent_type
+  master: true
+  cache_seconds: 30
+  metrics:
+    - agent_type:
+        usage: "LABEL"
+        description: "Type of agent"
+    - agent_count:
+        usage: "GAUGE"
+        description: "Number of registered agents of this type"
+    - healthy_agents:
+        usage: "GAUGE"
+        description: "Number of healthy agents (heartbeat within 5 minutes)"
+    - seconds_since_last_heartbeat:
+        usage: "GAUGE"
+        description: "Seconds since last heartbeat from any agent of this type"
+
+# Connection and performance metrics
+pg_stat_activity:
+  query: |
+    SELECT
+      pg_database.datname,
+      tmp.state,
+      COALESCE(count,0) as count,
+      COALESCE(max_tx_duration,0) as max_tx_duration
+    FROM
+      (
+        VALUES ('active'),
+               ('idle'),
+               ('idle in transaction'),
+               ('idle in transaction (aborted)'),
+               ('fastpath function call'),
+               ('disabled')
+      ) AS tmp(state) CROSS JOIN pg_database
+    LEFT JOIN (
+      SELECT
+        datname,
+        state,
+        count(*) AS count,
+        MAX(EXTRACT(EPOCH FROM now() - xact_start))::float AS max_tx_duration
+      FROM pg_stat_activity GROUP BY datname,state) AS tmp2
+      ON tmp.state = tmp2.state AND pg_database.datname = tmp2.datname
+    WHERE pg_database.datallowconn = 't'
+  master: true
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - state:
+        usage: "LABEL"
+        description: "Connection state"
+    - count:
+        usage: "GAUGE"
+        description: "Number of connections in this state"
+    - max_tx_duration:
+        usage: "GAUGE"
+        description: "Max duration in seconds any active transaction has been running"
+
+pg_slow_queries:
+  query: |
+    SELECT
+      query,
+      calls,
+      total_time,
+      mean_time,
+      rows
+    FROM pg_stat_statements
+    WHERE mean_time > 1000
+    ORDER BY mean_time DESC
+    LIMIT 10
+  master: true
+  cache_seconds: 300
+  metrics:
+    - query:
+        usage: "LABEL"
+        description: "Query text"
+    - calls:
+        usage: "COUNTER"
+        description: "Number of times executed"
+    - total_time:
+        usage: "COUNTER"
+        description: "Total time spent in the statement, in milliseconds"
+    - mean_time:
+        usage: "GAUGE"
+        description: "Mean time spent in the statement, in milliseconds"
+    - rows:
+        usage: "COUNTER"
+        description: "Total number of rows retrieved or affected by the statement"

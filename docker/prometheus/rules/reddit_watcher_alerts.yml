@@ -1,0 +1,252 @@
+# ABOUTME: Prometheus alerting rules for Reddit Technical Watcher production monitoring
+# ABOUTME: Defines critical alerts for service health, performance degradation, and system failures
+
+groups:
+  - name: reddit_watcher.critical
+    rules:
+      # Service availability alerts
+      - alert: AgentDown
+        expr: up{job=~".*-agent"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "Reddit Watcher Agent is down"
+          description: "The {{ $labels.job }} agent has been down for more than 30 seconds"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/agent-down"
+
+      - alert: DatabaseDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: "database"
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "The PostgreSQL database has been unreachable for more than 30 seconds"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/database-down"
+
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: "redis"
+        annotations:
+          summary: "Redis cache is down"
+          description: "The Redis cache has been unreachable for more than 30 seconds"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/redis-down"
+
+      # Performance degradation alerts
+      - alert: HighResponseTime
+        expr: reddit_watcher:agent_response_time_p95 > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High response time detected"
+          description: "{{ $labels.job }} 95th percentile response time is {{ $value }}s"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/high-response-time"
+
+      - alert: HighErrorRate
+        expr: reddit_watcher:error_rate_5m > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High error rate detected"
+          description: "{{ $labels.job }} error rate is {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/high-error-rate"
+
+      # A2A protocol alerts
+      - alert: A2ACommunicationFailure
+        expr: reddit_watcher:a2a_success_rate_5m < 0.9
+        for: 1m
+        labels:
+          severity: critical
+          service: "a2a-protocol"
+        annotations:
+          summary: "A2A communication failure rate is high"
+          description: "A2A protocol success rate is {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/a2a-communication-failure"
+
+      - alert: CircuitBreakerOpen
+        expr: reddit_watcher:circuit_breaker_open_rate > 0
+        for: 30s
+        labels:
+          severity: warning
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "Circuit breaker is open"
+          description: "{{ $labels.job }} circuit breaker has opened, indicating service degradation"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/circuit-breaker-open"
+
+  - name: reddit_watcher.resources
+    rules:
+      # Resource utilization alerts
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: "system"
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/high-memory-usage"
+
+      - alert: HighCPUUsage
+        expr: 100 * (1 - avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: "system"
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}%"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/high-cpu-usage"
+
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: "system"
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.mountpoint }}"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/high-disk-usage"
+
+      # Database resource alerts
+      - alert: DatabaseConnectionPoolExhausted
+        expr: reddit_watcher:db_pool_utilization > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          service: "database"
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Database connection pool utilization is {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/db-connection-pool-exhausted"
+
+      - alert: RedisMemoryHigh
+        expr: reddit_watcher:redis_memory_utilization > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: "redis"
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis memory utilization is {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/redis-memory-high"
+
+  - name: reddit_watcher.business
+    rules:
+      # Business logic alerts
+      - alert: NoRecentRedditData
+        expr: time() - reddit_last_successful_fetch_timestamp > 3600
+        for: 5m
+        labels:
+          severity: warning
+          service: "retrieval-agent"
+        annotations:
+          summary: "No recent Reddit data retrieved"
+          description: "No successful Reddit data fetch in the last hour"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/no-recent-reddit-data"
+
+      - alert: SummarizationFailures
+        expr: rate(summarization_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: "summarise-agent"
+        annotations:
+          summary: "High summarization failure rate"
+          description: "Summarization failure rate is {{ $value }} per second"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/summarization-failures"
+
+      - alert: AlertDeliveryFailures
+        expr: rate(alert_delivery_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: "alert-agent"
+        annotations:
+          summary: "Alert delivery failures detected"
+          description: "Alert delivery failure rate is {{ $value }} per second"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/alert-delivery-failures"
+
+      - alert: WorkflowStalled
+        expr: time() - workflow_last_completion_timestamp > 14400
+        for: 5m
+        labels:
+          severity: critical
+          service: "coordinator-agent"
+        annotations:
+          summary: "Workflow execution has stalled"
+          description: "No workflow completion detected in the last 4 hours"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/workflow-stalled"
+
+  - name: reddit_watcher.external_dependencies
+    rules:
+      # External service alerts
+      - alert: RedditAPIRateLimitExceeded
+        expr: rate(reddit_api_rate_limit_exceeded_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: "reddit-api"
+        annotations:
+          summary: "Reddit API rate limit exceeded"
+          description: "Reddit API rate limit exceeded {{ $value }} times per second"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/reddit-api-rate-limit"
+
+      - alert: GeminiAPIFailures
+        expr: rate(gemini_api_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: "gemini-api"
+        annotations:
+          summary: "High Gemini API failure rate"
+          description: "Gemini API failure rate is {{ $value }} per second"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/gemini-api-failures"
+
+      - alert: SlackWebhookFailures
+        expr: rate(slack_webhook_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: "slack-webhook"
+        annotations:
+          summary: "Slack webhook delivery failures"
+          description: "Slack webhook failure rate is {{ $value }} per second"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/slack-webhook-failures"
+
+  - name: reddit_watcher.security
+    rules:
+      # Security-related alerts
+      - alert: UnauthorizedAccess
+        expr: rate(http_requests_total{status="401"}[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+          service: "security"
+        annotations:
+          summary: "Unauthorized access attempts detected"
+          description: "Unauthorized access rate is {{ $value }} per second"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/unauthorized-access"
+
+      - alert: FailedAuthentication
+        expr: rate(authentication_failures_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+          service: "security"
+        annotations:
+          summary: "Failed authentication attempts"
+          description: "Authentication failure rate is {{ $value }} per second"
+          runbook_url: "https://docs.reddit-watcher.com/runbooks/failed-authentication"

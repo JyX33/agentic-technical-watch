@@ -1,0 +1,207 @@
+# ABOUTME: Prometheus configuration for Reddit Technical Watcher monitoring
+# ABOUTME: Defines scrape targets, alerting rules, and service discovery for all system components
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'reddit-watcher-prod'
+    environment: 'production'
+
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # System metrics via Node Exporter
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Reddit Watcher Agents
+  - job_name: 'coordinator-agent'
+    static_configs:
+      - targets: ['coordinator-agent:8000']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    basic_auth:
+      username: 'monitoring'
+      password: 'monitoring_token'
+
+  - job_name: 'retrieval-agent'
+    static_configs:
+      - targets: ['retrieval-agent:8001']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    basic_auth:
+      username: 'monitoring'
+      password: 'monitoring_token'
+
+  - job_name: 'filter-agent'
+    static_configs:
+      - targets: ['filter-agent:8002']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    basic_auth:
+      username: 'monitoring'
+      password: 'monitoring_token'
+
+  - job_name: 'summarise-agent'
+    static_configs:
+      - targets: ['summarise-agent:8003']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    basic_auth:
+      username: 'monitoring'
+      password: 'monitoring_token'
+
+  - job_name: 'alert-agent'
+    static_configs:
+      - targets: ['alert-agent:8004']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    basic_auth:
+      username: 'monitoring'
+      password: 'monitoring_token'
+
+  # Database monitoring
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Redis monitoring
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Container metrics from cAdvisor
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Health check endpoints for service discovery
+  - job_name: 'reddit-watcher-health'
+    static_configs:
+      - targets:
+        - 'coordinator-agent:8000'
+        - 'retrieval-agent:8001'
+        - 'filter-agent:8002'
+        - 'summarise-agent:8003'
+        - 'alert-agent:8004'
+    scrape_interval: 10s
+    metrics_path: /health
+    params:
+      format: ['prometheus']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'up'
+        target_label: 'service_health'
+        replacement: '${1}'
+
+  # A2A protocol metrics
+  - job_name: 'a2a-protocol-metrics'
+    static_configs:
+      - targets:
+        - 'coordinator-agent:8000'
+        - 'retrieval-agent:8001'
+        - 'filter-agent:8002'
+        - 'summarise-agent:8003'
+        - 'alert-agent:8004'
+    scrape_interval: 15s
+    metrics_path: /a2a/metrics
+    params:
+      format: ['prometheus']
+    basic_auth:
+      username: 'monitoring'
+      password: 'monitoring_token'
+
+  # Custom application metrics
+  - job_name: 'reddit-watcher-custom'
+    static_configs:
+      - targets:
+        - 'coordinator-agent:8000'
+        - 'retrieval-agent:8001'
+        - 'filter-agent:8002'
+        - 'summarise-agent:8003'
+        - 'alert-agent:8004'
+    scrape_interval: 30s
+    metrics_path: /custom-metrics
+    params:
+      format: ['prometheus']
+    basic_auth:
+      username: 'monitoring'
+      password: 'monitoring_token'
+
+# Recording rules for performance optimization
+recording_rules:
+  - name: reddit_watcher.rules
+    rules:
+      # Agent response time percentiles
+      - record: reddit_watcher:agent_response_time_p95
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+        labels:
+          quantile: "0.95"
+
+      - record: reddit_watcher:agent_response_time_p99
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+        labels:
+          quantile: "0.99"
+
+      # Error rates by service
+      - record: reddit_watcher:error_rate_5m
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])
+
+      # Request throughput by service
+      - record: reddit_watcher:request_rate_5m
+        expr: rate(http_requests_total[5m])
+
+      # A2A communication success rate
+      - record: reddit_watcher:a2a_success_rate_5m
+        expr: rate(a2a_messages_total{status="success"}[5m]) / rate(a2a_messages_total[5m])
+
+      # Circuit breaker state
+      - record: reddit_watcher:circuit_breaker_open_rate
+        expr: rate(circuit_breaker_state_changes_total{state="open"}[5m])
+
+      # Database connection pool utilization
+      - record: reddit_watcher:db_pool_utilization
+        expr: db_connections_active / db_connections_max
+
+      # Redis memory utilization
+      - record: reddit_watcher:redis_memory_utilization
+        expr: redis_memory_used_bytes / redis_memory_max_bytes

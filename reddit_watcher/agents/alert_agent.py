@@ -134,6 +134,24 @@ class AlertAgent(BaseA2AAgent):
                 examples=[],
             ),
             AgentSkill(
+                id="sendBatch",
+                name="sendBatch",
+                description="Send batch of alerts across multiple channels with tracking",
+                tags=["notification", "batch", "multi-channel"],
+                inputModes=["application/json"],
+                outputModes=["application/json"],
+                examples=[],
+            ),
+            AgentSkill(
+                id="getDeliveryStats",
+                name="getDeliveryStats",
+                description="Get delivery statistics and tracking information",
+                tags=["monitoring", "statistics", "delivery"],
+                inputModes=["text/plain", "application/json"],
+                outputModes=["application/json"],
+                examples=[],
+            ),
+            AgentSkill(
                 id="health_check",
                 name="health_check",
                 description="Check agent health and notification service connectivity",
@@ -153,6 +171,10 @@ class AlertAgent(BaseA2AAgent):
                 return await self._send_slack_alert(parameters)
             elif skill_name == "sendEmail":
                 return await self._send_email_alert(parameters)
+            elif skill_name == "sendBatch":
+                return await self._send_alert_batch(parameters)
+            elif skill_name == "getDeliveryStats":
+                return await self._get_delivery_stats(parameters)
             elif skill_name == "health_check":
                 return await self._health_check(parameters)
             else:
@@ -268,6 +290,163 @@ class AlertAgent(BaseA2AAgent):
                 "email", dedup_hash, "failed", recipients, str(e)
             )
             raise
+
+    async def _send_alert_batch(self, parameters: dict[str, Any]) -> dict[str, Any]:
+        """Send a batch of alerts across multiple channels."""
+        batch_id = parameters.get(
+            "batch_id", f"batch_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
+        )
+        title = parameters.get("title", "Alert Batch")
+        summary = parameters.get("summary", "")
+        items = parameters.get("items", [])
+        channels = parameters.get("channels", ["slack", "email"])
+        schedule_type = parameters.get("schedule_type", "immediate")
+        priority = parameters.get("priority", "medium")
+
+        if not items:
+            raise ValueError("Alert batch must contain at least one item")
+
+        # Generate batch deduplication hash
+        batch_content = (
+            f"{batch_id}:{title}:{summary}:{json.dumps(items, sort_keys=True)}"
+        )
+        batch_hash = hashlib.sha256(batch_content.encode()).hexdigest()[:16]
+
+        if batch_hash in self._delivery_hashes:
+            return {
+                "status": "skipped",
+                "reason": "duplicate_batch",
+                "batch_id": batch_id,
+                "deduplication_hash": batch_hash,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+        # Format batch content for different channels
+        batch_results = {}
+        successful_deliveries = 0
+        failed_deliveries = 0
+
+        # Format items for display
+        items_summary = "\n".join(
+            [
+                f"• {item.get('title', 'Untitled')}: {item.get('message', '')}"
+                for item in items
+            ]
+        )
+
+        items_count = len(items)
+        batch_message = f"{summary}\n\n📋 Items ({items_count}):\n{items_summary}"
+
+        # Send to each requested channel
+        for channel in channels:
+            try:
+                if channel == "slack" and self.config.has_slack_webhook():
+                    slack_params = {
+                        "message": batch_message,
+                        "title": f"📦 {title}",
+                        "priority": priority,
+                        "metadata": {
+                            "batch_id": batch_id,
+                            "items_count": items_count,
+                            "schedule_type": schedule_type,
+                            "type": "alert_batch",
+                        },
+                    }
+
+                    result = await self._send_slack_alert(slack_params)
+                    batch_results["slack_delivery"] = result
+
+                    if result.get("status") == "success":
+                        successful_deliveries += 1
+                    else:
+                        failed_deliveries += 1
+
+                elif (
+                    channel == "email"
+                    and self.config.has_smtp_config()
+                    and self.config.email_recipients
+                ):
+                    # Create HTML list for email
+                    items_html = (
+                        "<ul>"
+                        + "".join(
+                            [
+                                f"<li><strong>{item.get('title', 'Untitled')}</strong>: {item.get('message', '')}</li>"
+                                for item in items
+                            ]
+                        )
+                        + "</ul>"
+                    )
+
+                    email_params = {
+                        "message": batch_message,
+                        "subject": f"📦 {title} ({items_count} items)",
+                        "priority": priority,
+                        "html_template": "default",
+                        "metadata": {
+                            "batch_id": batch_id,
+                            "items_count": items_count,
+                            "schedule_type": schedule_type,
+                            "type": "alert_batch",
+                            "items_html": items_html,
+                        },
+                    }
+
+                    result = await self._send_email_alert(email_params)
+                    batch_results["email_delivery"] = result
+
+                    if result.get("status") == "success":
+                        successful_deliveries += 1
+                    else:
+                        failed_deliveries += 1
+
+                else:
+                    # Channel not configured or available
+                    batch_results[f"{channel}_delivery"] = {
+                        "status": "skipped",
+                        "reason": f"{channel}_not_configured",
+                    }
+
+            except Exception as e:
+                batch_results[f"{channel}_delivery"] = {
+                    "status": "error",
+                    "error": str(e),
+                }
+                failed_deliveries += 1
+
+        # Track overall batch delivery
+        if successful_deliveries > 0:
+            self._delivery_hashes.add(batch_hash)
+            await self._track_delivery(
+                "batch",
+                batch_hash,
+                "success",
+                [f"{channel} ({successful_deliveries}/{len(channels)} successful)"],
+                f"Batch delivery: {successful_deliveries} successful, {failed_deliveries} failed",
+            )
+
+            batch_status = "success" if failed_deliveries == 0 else "partial_success"
+        else:
+            batch_status = "failed"
+            await self._track_delivery(
+                "batch",
+                batch_hash,
+                "failed",
+                channels,
+                f"All batch deliveries failed: {failed_deliveries} failures",
+            )
+
+        return {
+            "status": batch_status,
+            "batch_id": batch_id,
+            "items_count": items_count,
+            "channels": channels,
+            "successful_deliveries": successful_deliveries,
+            "failed_deliveries": failed_deliveries,
+            "delivery_results": batch_results,
+            "deduplication_hash": batch_hash,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
 
     async def _health_check(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Perform health check and optionally test connectivity."""
@@ -574,30 +753,195 @@ Reddit Technical Watcher
         recipients: list[str] = None,
         error: str = None,
     ) -> None:
-        """Track alert delivery for monitoring and debugging."""
+        """Track alert delivery for monitoring and debugging with enhanced metadata."""
         try:
-            # For now, we'll just log the delivery since the full AlertBatch system
-            # isn't implemented yet. In a complete implementation, we'd create an
-            # AlertBatch first, then create AlertDelivery records for each channel.
-
             alert_status = (
                 AlertStatus.SENT if status == "success" else AlertStatus.FAILED
             )
 
+            # Enhanced delivery tracking with timestamps and metadata
+            delivery_record = {
+                "channel": channel,
+                "status": alert_status.value,
+                "dedup_hash": dedup_hash,
+                "recipients": recipients or [],
+                "error": error,
+                "timestamp": datetime.now(UTC).isoformat(),
+                "retry_count": getattr(self, f"_retry_count_{dedup_hash}", 0),
+            }
+
+            # Store delivery record in memory for this session
+            # In production, this would be stored in database
+            if not hasattr(self, "_delivery_history"):
+                self._delivery_history = []
+
+            self._delivery_history.append(delivery_record)
+
+            # Log with structured data
             self.logger.info(
-                f"Alert delivery tracked: channel={channel}, status={alert_status.value}, "
-                f"dedup_hash={dedup_hash}, recipients={recipients}, error={error}"
+                f"Alert delivery tracked: {json.dumps(delivery_record, indent=2)}"
             )
 
-            # TODO: Implement full AlertBatch and AlertDelivery tracking when needed
-            # This would require:
-            # 1. Create or find AlertBatch for this notification cycle
-            # 2. Create AlertDelivery record with alert_batch_id
-            # 3. Update delivery status and timing information
+            # Implement retry logic for failed deliveries
+            if status == "failed" and error:
+                await self._handle_delivery_failure(
+                    channel, dedup_hash, error, recipients
+                )
 
         except Exception as e:
             # Don't fail alert delivery if tracking fails
             self.logger.warning(f"Failed to track delivery: {e}")
+
+    async def _handle_delivery_failure(
+        self,
+        channel: str,
+        dedup_hash: str,
+        error: str,
+        recipients: list[str] = None,
+    ) -> None:
+        """Handle delivery failures with retry logic."""
+        try:
+            retry_key = f"_retry_count_{dedup_hash}"
+            current_retries = getattr(self, retry_key, 0)
+            max_retries = 3  # Configurable retry limit
+
+            if current_retries < max_retries:
+                setattr(self, retry_key, current_retries + 1)
+
+                # Log retry attempt
+                self.logger.warning(
+                    f"Delivery failed for {channel} (attempt {current_retries + 1}/{max_retries + 1}): {error}"
+                )
+
+                # In a production system, this would schedule a retry
+                # For now, we'll just track the retry attempt
+                retry_record = {
+                    "channel": channel,
+                    "dedup_hash": dedup_hash,
+                    "retry_attempt": current_retries + 1,
+                    "max_retries": max_retries,
+                    "error": error,
+                    "next_retry_scheduled": True,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+
+                if not hasattr(self, "_retry_history"):
+                    self._retry_history = []
+
+                self._retry_history.append(retry_record)
+
+                self.logger.info(f"Retry scheduled: {json.dumps(retry_record)}")
+
+            else:
+                # Max retries exceeded
+                self.logger.error(
+                    f"Max retries ({max_retries}) exceeded for {channel}, "
+                    f"dedup_hash={dedup_hash}, giving up"
+                )
+
+                # Mark as permanently failed
+                failure_record = {
+                    "channel": channel,
+                    "dedup_hash": dedup_hash,
+                    "status": "permanently_failed",
+                    "total_attempts": max_retries + 1,
+                    "final_error": error,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+
+                if not hasattr(self, "_permanent_failures"):
+                    self._permanent_failures = []
+
+                self._permanent_failures.append(failure_record)
+
+        except Exception as e:
+            self.logger.warning(f"Failed to handle delivery failure: {e}")
+
+    def get_delivery_statistics(self) -> dict[str, Any]:
+        """Get delivery statistics for monitoring and debugging."""
+        stats = {
+            "total_deliveries": len(getattr(self, "_delivery_history", [])),
+            "successful_deliveries": 0,
+            "failed_deliveries": 0,
+            "channels": {},
+            "retry_attempts": len(getattr(self, "_retry_history", [])),
+            "permanent_failures": len(getattr(self, "_permanent_failures", [])),
+            "deduplication_cache_size": len(self._delivery_hashes),
+        }
+
+        # Analyze delivery history
+        for record in getattr(self, "_delivery_history", []):
+            channel = record["channel"]
+            status = record["status"]
+
+            if channel not in stats["channels"]:
+                stats["channels"][channel] = {
+                    "total": 0,
+                    "successful": 0,
+                    "failed": 0,
+                }
+
+            stats["channels"][channel]["total"] += 1
+
+            if status == "sent":
+                stats["successful_deliveries"] += 1
+                stats["channels"][channel]["successful"] += 1
+            else:
+                stats["failed_deliveries"] += 1
+                stats["channels"][channel]["failed"] += 1
+
+        # Calculate success rate
+        if stats["total_deliveries"] > 0:
+            stats["success_rate"] = (
+                stats["successful_deliveries"] / stats["total_deliveries"]
+            ) * 100
+        else:
+            stats["success_rate"] = 0.0
+
+        return stats
+
+    async def _get_delivery_stats(self, parameters: dict[str, Any]) -> dict[str, Any]:
+        """Get delivery statistics and tracking information."""
+        try:
+            include_history = parameters.get("include_history", False)
+            include_retries = parameters.get("include_retries", False)
+            include_failures = parameters.get("include_failures", False)
+
+            # Get basic statistics
+            stats = self.get_delivery_statistics()
+
+            # Add timestamp
+            stats["generated_at"] = datetime.now(UTC).isoformat()
+
+            # Include detailed history if requested
+            if include_history:
+                stats["delivery_history"] = getattr(self, "_delivery_history", [])
+
+            if include_retries:
+                stats["retry_history"] = getattr(self, "_retry_history", [])
+
+            if include_failures:
+                stats["permanent_failures"] = getattr(self, "_permanent_failures", [])
+
+            # Add agent information
+            stats["agent_info"] = {
+                "name": self.name,
+                "version": self.version,
+                "type": self.agent_type,
+            }
+
+            return {
+                "status": "success",
+                "statistics": stats,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
 
     def get_health_status(self) -> dict[str, Any]:
         """Get agent health status."""

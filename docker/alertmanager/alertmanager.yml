@@ -1,0 +1,346 @@
+# ABOUTME: Alertmanager configuration for Reddit Technical Watcher production monitoring
+# ABOUTME: Defines alert routing, inhibition rules, and notification channels for operational alerts
+
+global:
+  smtp_smarthost: '${SMTP_SERVER}:${SMTP_PORT}'
+  smtp_from: '${ALERT_EMAIL}'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+route:
+  group_by: ['alertname', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'web.hook'
+  routes:
+    # Critical alerts route to immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 5s
+      repeat_interval: 15m
+      continue: true
+
+    # Warning alerts with longer grouping
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+
+    # Service-specific routing
+    - match:
+        service: database
+      receiver: 'database-alerts'
+      group_wait: 5s
+      repeat_interval: 30m
+
+    - match:
+        service: redis
+      receiver: 'cache-alerts'
+      group_wait: 5s
+      repeat_interval: 30m
+
+    - match_re:
+        service: '.*-agent'
+      receiver: 'agent-alerts'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # A2A protocol specific alerts
+    - match:
+        service: a2a-protocol
+      receiver: 'a2a-alerts'
+      group_wait: 5s
+      repeat_interval: 15m
+
+    # Business logic alerts
+    - match_re:
+        service: 'retrieval-agent|summarise-agent|alert-agent'
+      receiver: 'business-alerts'
+      group_wait: 15s
+      repeat_interval: 2h
+
+    # Security alerts
+    - match:
+        service: security
+      receiver: 'security-alerts'
+      group_wait: 0s
+      repeat_interval: 30m
+
+receivers:
+  # Default webhook receiver
+  - name: 'web.hook'
+    webhook_configs:
+      - url: 'http://alert-agent:8004/webhook/alertmanager'
+        send_resolved: true
+        http_config:
+          basic_auth:
+            username: 'alertmanager'
+            password: '${ALERTMANAGER_WEBHOOK_TOKEN}'
+
+  # Critical alerts - immediate notification via multiple channels
+  - name: 'critical-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: '[CRITICAL] Reddit Watcher Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          Alert: {{ .GroupLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+          Service: {{ .CommonLabels.service }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook_url }}
+          Started: {{ .StartsAt }}
+          {{ if .EndsAt }}Ended: {{ .EndsAt }}{{ end }}
+          {{ end }}
+        headers:
+          X-Priority: '1'
+          X-MSMail-Priority: 'High'
+          Importance: 'high'
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#reddit-watcher-alerts'
+        title: '[CRITICAL] Reddit Watcher Alert'
+        text: |
+          🚨 *Critical Alert: {{ .GroupLabels.alertname }}*
+
+          *Service:* {{ .CommonLabels.service }}
+          *Severity:* {{ .CommonLabels.severity }}
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          *Started:* {{ .StartsAt }}
+          {{ if .EndsAt }}*Resolved:* {{ .EndsAt }}{{ end }}
+          {{ end }}
+        color: 'danger'
+        send_resolved: true
+
+    webhook_configs:
+      - url: 'http://alert-agent:8004/webhook/critical'
+        send_resolved: true
+        http_config:
+          basic_auth:
+            username: 'alertmanager'
+            password: '${ALERTMANAGER_WEBHOOK_TOKEN}'
+
+  # Warning alerts - standard notification
+  - name: 'warning-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: '[WARNING] Reddit Watcher Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          Alert: {{ .GroupLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+          Service: {{ .CommonLabels.service }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook_url }}
+          Started: {{ .StartsAt }}
+          {{ if .EndsAt }}Ended: {{ .EndsAt }}{{ end }}
+          {{ end }}
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#reddit-watcher-monitoring'
+        title: '[WARNING] Reddit Watcher Alert'
+        text: |
+          ⚠️ *Warning Alert: {{ .GroupLabels.alertname }}*
+
+          *Service:* {{ .CommonLabels.service }}
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+        color: 'warning'
+        send_resolved: true
+
+  # Database-specific alerts
+  - name: 'database-alerts'
+    email_configs:
+      - to: '${DBA_EMAIL:-${ALERT_EMAIL}}'
+        subject: '[DATABASE] Reddit Watcher Database Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          Database Alert: {{ .GroupLabels.alertname }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#reddit-watcher-database'
+        title: '[DATABASE] Alert'
+        text: |
+          🗄️ *Database Alert: {{ .GroupLabels.alertname }}*
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: 'danger'
+
+  # Cache-specific alerts
+  - name: 'cache-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#reddit-watcher-infrastructure'
+        title: '[CACHE] Alert'
+        text: |
+          📊 *Cache Alert: {{ .GroupLabels.alertname }}*
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: 'warning'
+
+  # Agent-specific alerts
+  - name: 'agent-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: '[AGENT] Reddit Watcher Agent Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          Agent Alert: {{ .GroupLabels.alertname }}
+          Service: {{ .CommonLabels.service }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#reddit-watcher-agents'
+        title: '[AGENT] Alert'
+        text: |
+          🤖 *Agent Alert: {{ .GroupLabels.alertname }}*
+
+          *Service:* {{ .CommonLabels.service }}
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: 'warning'
+
+  # A2A protocol alerts
+  - name: 'a2a-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: '[A2A] Reddit Watcher A2A Protocol Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          A2A Protocol Alert: {{ .GroupLabels.alertname }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#reddit-watcher-a2a'
+        title: '[A2A] Protocol Alert'
+        text: |
+          🔗 *A2A Protocol Alert: {{ .GroupLabels.alertname }}*
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: 'danger'
+
+  # Business logic alerts
+  - name: 'business-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#reddit-watcher-business'
+        title: '[BUSINESS] Logic Alert'
+        text: |
+          📈 *Business Logic Alert: {{ .GroupLabels.alertname }}*
+
+          *Service:* {{ .CommonLabels.service }}
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: 'warning'
+
+  # Security alerts
+  - name: 'security-alerts'
+    email_configs:
+      - to: '${SECURITY_EMAIL:-${ALERT_EMAIL}}'
+        subject: '[SECURITY] Reddit Watcher Security Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          SECURITY ALERT: {{ .GroupLabels.alertname }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook_url }}
+          Started: {{ .StartsAt }}
+          {{ end }}
+        headers:
+          X-Priority: '1'
+          X-MSMail-Priority: 'High'
+          Importance: 'high'
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#reddit-watcher-security'
+        title: '[SECURITY] Alert'
+        text: |
+          🔒 *SECURITY ALERT: {{ .GroupLabels.alertname }}*
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Started:* {{ .StartsAt }}
+          {{ end }}
+        color: 'danger'
+
+inhibit_rules:
+  # Inhibit high-level alerts when more specific ones are firing
+  - source_match:
+      alertname: 'AgentDown'
+    target_match:
+      service: '{{ .service }}'
+    equal: ['service']
+
+  - source_match:
+      alertname: 'DatabaseDown'
+    target_match_re:
+      alertname: 'DatabaseConnectionPoolExhausted|HighResponseTime'
+    equal: ['service']
+
+  - source_match:
+      alertname: 'RedisDown'
+    target_match:
+      alertname: 'RedisMemoryHigh'
+    equal: ['service']
+
+  # Inhibit warning alerts when critical alerts are firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['service', 'alertname']
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

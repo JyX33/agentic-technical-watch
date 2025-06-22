@@ -1,0 +1,354 @@
+{
+  "timestamp": "2025-06-22T16:28:51.429922",
+  "tests": {
+    "circuit_breaker_basic": {
+      "success": true,
+      "timestamp": "2025-06-22T16:28:52.570395",
+      "details": {
+        "total_calls": 7,
+        "total_successes": 3,
+        "total_failures": 3,
+        "final_state": "closed"
+      }
+    },
+    "circuit_breaker_timeout": {
+      "success": true,
+      "timestamp": "2025-06-22T16:28:53.572955",
+      "details": {
+        "total_timeouts": 2,
+        "circuit_state": "open",
+        "metrics": {
+          "name": "test_timeout",
+          "state": "open",
+          "configuration": {
+            "failure_threshold": 2,
+            "recovery_timeout": 1,
+            "success_threshold": 3,
+            "half_open_max_calls": 5,
+            "call_timeout": 0.5
+          },
+          "current_counters": {
+            "failure_count": 2,
+            "success_count": 0,
+            "half_open_calls": 0
+          },
+          "total_metrics": {
+            "total_calls": 2,
+            "total_successes": 0,
+            "total_failures": 2,
+            "total_timeouts": 2,
+            "total_circuit_open_rejections": 0,
+            "success_rate_percent": 0.0,
+            "failure_rate_percent": 100.0
+          },
+          "timestamps": {
+            "last_failure_time": "2025-06-22T16:28:53.572805",
+            "last_success_time": null,
+            "next_attempt_time": "2025-06-22T16:28:54.572805"
+          },
+          "health_status": {
+            "is_healthy": false,
+            "can_accept_calls": false,
+            "time_until_next_attempt": 0.999876
+          }
+        }
+      }
+    },
+    "circuit_breaker_registry": {
+      "success": true,
+      "timestamp": "2025-06-22T16:28:53.573390",
+      "details": {
+        "total_circuit_breakers": 2,
+        "health_summary": {
+          "total_circuit_breakers": 2,
+          "healthy_circuit_breakers": 2,
+          "health_percentage": 100.0,
+          "circuit_breaker_states": {
+            "agent1": "closed",
+            "agent2": "closed"
+          }
+        }
+      }
+    },
+    "task_recovery_manager": {
+      "success": false,
+      "timestamp": "2025-06-22T16:28:53.576232",
+      "details": {
+        "error": "",
+        "error_type": "AssertionError"
+      }
+    },
+    "network_failure_simulation": {
+      "success": false,
+      "timestamp": "2025-06-22T16:28:53.576474",
+      "details": {
+        "error": "'NoneType' object has no attribute 'ssl'",
+        "error_type": "AttributeError"
+      }
+    },
+    "external_api_failure": {
+      "success": false,
+      "timestamp": "2025-06-22T16:28:55.682112",
+      "details": {
+        "error": "",
+        "error_type": "AssertionError"
+      }
+    },
+    "database_failure": {
+      "success": false,
+      "timestamp": "2025-06-22T16:28:56.784467",
+      "details": {
+        "error": "",
+        "error_type": "AssertionError"
+      }
+    },
+    "resource_exhaustion": {
+      "success": false,
+      "timestamp": "2025-06-22T16:28:57.886631",
+      "details": {
+        "error": "",
+        "error_type": "AssertionError"
+      }
+    },
+    "concurrent_failure_handling": {
+      "success": true,
+      "timestamp": "2025-06-22T16:28:58.444138",
+      "details": {
+        "total_calls": 10,
+        "successes": 7,
+        "failures": 3,
+        "final_state": "closed"
+      }
+    },
+    "graceful_degradation": {
+      "success": true,
+      "timestamp": "2025-06-22T16:28:58.444899",
+      "details": {
+        "critical_agent_failed": true,
+        "non_critical_agents_working": true,
+        "fallback_mechanism": true,
+        "workflow_result": {
+          "retrieval": "failed",
+          "filter": "success",
+          "summarise": "success",
+          "alert": "success",
+          "mode": "degraded",
+          "fallback_used": true
+        }
+      }
+    },
+    "system_stability_under_load": {
+      "success": true,
+      "timestamp": "2025-06-22T16:28:58.750287",
+      "details": {
+        "total_calls": 150,
+        "successes": 30,
+        "failures": 120,
+        "circuit_breaker_rejections": 105,
+        "stability_score_percent": 20.0,
+        "circuit_breaker_states": {
+          "load_test_0": "open",
+          "load_test_1": "open",
+          "load_test_2": "open",
+          "load_test_3": "open",
+          "load_test_4": "open"
+        },
+        "all_metrics": {
+          "load_test_0": {
+            "name": "load_test_0",
+            "state": "open",
+            "configuration": {
+              "failure_threshold": 3,
+              "recovery_timeout": 0.5,
+              "success_threshold": 3,
+              "half_open_max_calls": 5,
+              "call_timeout": 1.0
+            },
+            "current_counters": {
+              "failure_count": 3,
+              "success_count": 0,
+              "half_open_calls": 0
+            },
+            "total_metrics": {
+              "total_calls": 30,
+              "total_successes": 6,
+              "total_failures": 3,
+              "total_timeouts": 0,
+              "total_circuit_open_rejections": 21,
+              "success_rate_percent": 20.0,
+              "failure_rate_percent": 10.0
+            },
+            "timestamps": {
+              "last_failure_time": "2025-06-22T16:28:58.445975",
+              "last_success_time": "2025-06-22T16:28:58.457169",
+              "next_attempt_time": "2025-06-22T16:28:58.945975"
+            },
+            "health_status": {
+              "is_healthy": false,
+              "can_accept_calls": false,
+              "time_until_next_attempt": 0.195774
+            }
+          },
+          "load_test_1": {
+            "name": "load_test_1",
+            "state": "open",
+            "configuration": {
+              "failure_threshold": 3,
+              "recovery_timeout": 0.5,
+              "success_threshold": 3,
+              "half_open_max_calls": 5,
+              "call_timeout": 1.0
+            },
+            "current_counters": {
+              "failure_count": 3,
+              "success_count": 0,
+              "half_open_calls": 0
+            },
+            "total_metrics": {
+              "total_calls": 30,
+              "total_successes": 6,
+              "total_failures": 3,
+              "total_timeouts": 0,
+              "total_circuit_open_rejections": 21,
+              "success_rate_percent": 20.0,
+              "failure_rate_percent": 10.0
+            },
+            "timestamps": {
+              "last_failure_time": "2025-06-22T16:28:58.446538",
+              "last_success_time": "2025-06-22T16:28:58.457210",
+              "next_attempt_time": "2025-06-22T16:28:58.946538"
+            },
+            "health_status": {
+              "is_healthy": false,
+              "can_accept_calls": false,
+              "time_until_next_attempt": 0.196291
+            }
+          },
+          "load_test_2": {
+            "name": "load_test_2",
+            "state": "open",
+            "configuration": {
+              "failure_threshold": 3,
+              "recovery_timeout": 0.5,
+              "success_threshold": 3,
+              "half_open_max_calls": 5,
+              "call_timeout": 1.0
+            },
+            "current_counters": {
+              "failure_count": 3,
+              "success_count": 0,
+              "half_open_calls": 0
+            },
+            "total_metrics": {
+              "total_calls": 30,
+              "total_successes": 6,
+              "total_failures": 3,
+              "total_timeouts": 0,
+              "total_circuit_open_rejections": 21,
+              "success_rate_percent": 20.0,
+              "failure_rate_percent": 10.0
+            },
+            "timestamps": {
+              "last_failure_time": "2025-06-22T16:28:58.447117",
+              "last_success_time": "2025-06-22T16:28:58.457274",
+              "next_attempt_time": "2025-06-22T16:28:58.947117"
+            },
+            "health_status": {
+              "is_healthy": false,
+              "can_accept_calls": false,
+              "time_until_next_attempt": 0.196858
+            }
+          },
+          "load_test_3": {
+            "name": "load_test_3",
+            "state": "open",
+            "configuration": {
+              "failure_threshold": 3,
+              "recovery_timeout": 0.5,
+              "success_threshold": 3,
+              "half_open_max_calls": 5,
+              "call_timeout": 1.0
+            },
+            "current_counters": {
+              "failure_count": 3,
+              "success_count": 0,
+              "half_open_calls": 0
+            },
+            "total_metrics": {
+              "total_calls": 30,
+              "total_successes": 6,
+              "total_failures": 3,
+              "total_timeouts": 0,
+              "total_circuit_open_rejections": 21,
+              "success_rate_percent": 20.0,
+              "failure_rate_percent": 10.0
+            },
+            "timestamps": {
+              "last_failure_time": "2025-06-22T16:28:58.447666",
+              "last_success_time": "2025-06-22T16:28:58.458568",
+              "next_attempt_time": "2025-06-22T16:28:58.947666"
+            },
+            "health_status": {
+              "is_healthy": false,
+              "can_accept_calls": false,
+              "time_until_next_attempt": 0.197401
+            }
+          },
+          "load_test_4": {
+            "name": "load_test_4",
+            "state": "open",
+            "configuration": {
+              "failure_threshold": 3,
+              "recovery_timeout": 0.5,
+              "success_threshold": 3,
+              "half_open_max_calls": 5,
+              "call_timeout": 1.0
+            },
+            "current_counters": {
+              "failure_count": 3,
+              "success_count": 0,
+              "half_open_calls": 0
+            },
+            "total_metrics": {
+              "total_calls": 30,
+              "total_successes": 6,
+              "total_failures": 3,
+              "total_timeouts": 0,
+              "total_circuit_open_rejections": 21,
+              "success_rate_percent": 20.0,
+              "failure_rate_percent": 10.0
+            },
+            "timestamps": {
+              "last_failure_time": "2025-06-22T16:28:58.448327",
+              "last_success_time": "2025-06-22T16:28:58.458594",
+              "next_attempt_time": "2025-06-22T16:28:58.948327"
+            },
+            "health_status": {
+              "is_healthy": false,
+              "can_accept_calls": false,
+              "time_until_next_attempt": 0.198051
+            }
+          }
+        }
+      }
+    }
+  },
+  "summary": {
+    "total_tests": 11,
+    "passed_tests": 6,
+    "failed_tests": 5,
+    "success_rate_percent": 54.55,
+    "overall_status": "FAILED",
+    "test_duration": "7.32 seconds",
+    "recommendations": [
+      "Some tests failed. Review and fix issues before production deployment.",
+      "Fix issues in: task_recovery_manager",
+      "Fix issues in: network_failure_simulation",
+      "Fix issues in: external_api_failure",
+      "Fix issues in: database_failure",
+      "Fix issues in: resource_exhaustion",
+      "Improve network error handling and retry logic",
+      "Enhance database connection pooling and failover mechanisms"
+    ]
+  }
+}

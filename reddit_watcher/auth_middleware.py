@@ -62,10 +62,8 @@ class AuthMiddleware:
 
         # If no authentication methods are configured
         if not self.config.a2a_api_key and not self.config.jwt_secret:
-            raise HTTPException(
-                status_code=401, detail="Authentication not configured"
-            )
-        
+            raise HTTPException(status_code=401, detail="Authentication not configured")
+
         # Token is invalid
         raise HTTPException(
             status_code=403, detail="Invalid authentication credentials"

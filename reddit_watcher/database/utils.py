@@ -19,6 +19,7 @@ from reddit_watcher.models import (
     create_database_engine,
     create_session_maker,
 )
+from reddit_watcher.performance.decorators import database_monitor
 
 logger = logging.getLogger(__name__)
 
@@ -30,23 +31,29 @@ _async_session_maker = None
 
 
 def get_database_engine():
-    """Get or create database engine with connection pooling."""
+    """Get or create database engine with optimized connection pooling."""
     global _engine
     if _engine is None:
         settings = get_settings()
         _engine = create_database_engine(
             settings.database_url,
-            pool_size=20,  # Number of connections to keep persistently
-            max_overflow=30,  # Additional connections beyond pool_size
+            pool_size=settings.database_pool_size,  # Use configurable pool size
+            max_overflow=settings.database_max_overflow,  # Use configurable overflow
             pool_pre_ping=True,  # Validate connections before use
             pool_recycle=3600,  # Recycle connections every hour
+            pool_timeout=30,  # Wait up to 30 seconds for a connection
+            pool_reset_on_return="commit",  # Reset transaction state on return
         )
-        logger.info("Database engine created with connection pooling")
+        logger.info(
+            f"Database engine created with optimized connection pooling "
+            f"(pool_size={settings.database_pool_size}, "
+            f"max_overflow={settings.database_max_overflow})"
+        )
     return _engine
 
 
 def get_async_database_engine():
-    """Get or create async database engine with connection pooling."""
+    """Get or create async database engine with optimized connection pooling."""
     global _async_engine
     if _async_engine is None:
         settings = get_settings()
@@ -57,13 +64,18 @@ def get_async_database_engine():
         _async_engine = create_async_engine(
             async_url,
             echo=False,
-            pool_size=20,  # Number of connections to keep persistently
-            max_overflow=30,  # Additional connections beyond pool_size
+            pool_size=settings.database_pool_size,  # Use configurable pool size
+            max_overflow=settings.database_max_overflow,  # Use configurable overflow
             pool_pre_ping=True,  # Validate connections before use
             pool_recycle=3600,  # Recycle connections every hour
             pool_timeout=30,  # Wait up to 30 seconds for a connection
+            pool_reset_on_return="commit",  # Reset transaction state on return
         )
-        logger.info("Async database engine created with connection pooling")
+        logger.info(
+            f"Async database engine created with optimized connection pooling "
+            f"(pool_size={settings.database_pool_size}, "
+            f"max_overflow={settings.database_max_overflow})"
+        )
     return _async_engine
 
 
@@ -147,6 +159,7 @@ async def initialize_async_database():
 # A2A Task Management
 
 
+@database_monitor("insert")
 def create_a2a_task(
     agent_type: str,
     skill_name: str,
@@ -175,6 +188,7 @@ def create_a2a_task(
     return task_id
 
 
+@database_monitor("query")
 def get_pending_tasks(agent_type: str | None = None, limit: int = 10) -> list[A2ATask]:
     """Get pending tasks for processing."""
     with get_db_session() as session:
@@ -191,6 +205,7 @@ def get_pending_tasks(agent_type: str | None = None, limit: int = 10) -> list[A2
         return result.scalars().all()
 
 
+@database_monitor("update")
 def update_task_status(
     task_id: str,
     status: TaskStatus,

@@ -1,0 +1,1538 @@
+{
+  "resource_metrics": [
+    {
+      "timestamp": 1750603911.3282702,
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0,
+      "memory_used_mb": 0.0,
+      "memory_available_mb": 0.0,
+      "disk_usage_percent": 0.0,
+      "disk_free_gb": 0.0,
+      "network_bytes_sent": 0,
+      "network_bytes_recv": 0,
+      "open_files": 0,
+      "active_connections": 0,
+      "process_count": 0
+    },
+    {
+      "timestamp": 1750603913.7128768,
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0,
+      "memory_used_mb": 0.0,
+      "memory_available_mb": 0.0,
+      "disk_usage_percent": 0.0,
+      "disk_free_gb": 0.0,
+      "network_bytes_sent": 0,
+      "network_bytes_recv": 0,
+      "open_files": 0,
+      "active_connections": 0,
+      "process_count": 0
+    }
+  ],
+  "performance_metrics": [
+    {
+      "operation_name": "ml_model_loading_sentence_transformer",
+      "start_time": 1750603911.3239157,
+      "end_time": 1750603914.3645408,
+      "duration": 3.0406250953674316,
+      "success": true,
+      "error_message": null,
+      "metadata": {}
+    },
+    {
+      "operation_name": "ml_model_loading_spacy",
+      "start_time": 1750603914.364572,
+      "end_time": 1750603914.5363944,
+      "duration": 0.17182230949401855,
+      "success": true,
+      "error_message": null,
+      "metadata": {}
+    },
+    {
+      "operation_name": "ml_model_cached_loading",
+      "start_time": 1750603914.5364566,
+      "end_time": 1750603914.536476,
+      "duration": 1.9311904907226562e-05,
+      "success": true,
+      "error_message": null,
+      "metadata": {}
+    },
+    {
+      "operation_name": "ml_optimized_inference",
+      "start_time": 1750603914.5364888,
+      "end_time": 1750603915.1658783,
+      "duration": 0.6293895244598389,
+      "success": true,
+      "error_message": null,
+      "metadata": {}
+    },
+    {
+      "operation_name": "database_health_check",
+      "start_time": 1750603915.1659095,
+      "end_time": 1750603915.166184,
+      "duration": 0.00027441978454589844,
+      "success": true,
+      "error_message": null,
+      "metadata": {}
+    },
+    {
+      "operation_name": "database_connection_pool",
+      "start_time": 1750603915.1661916,
+      "end_time": 1750603915.16624,
+      "duration": 4.839897155761719e-05,
+      "success": true,
+      "error_message": null,
+      "metadata": {}
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.1664953,
+      "end_time": 1750603915.209994,
+      "duration": 0.04349875450134277,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "filter_agent_semantic_similarity",
+      "start_time": 1750603915.1662822,
+      "end_time": 1750603915.210048,
+      "duration": 0.04376578330993652,
+      "success": true,
+      "error_message": null,
+      "metadata": {}
+    },
+    {
+      "operation_name": "summarise_agent_fallback",
+      "start_time": 1750603915.2101448,
+      "end_time": 1750603915.2101493,
+      "duration": 4.5299530029296875e-06,
+      "success": false,
+      "error_message": "'SummariseAgent' object has no attribute '_summarize_extractive'",
+      "metadata": {}
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.2173982,
+      "end_time": 1750603915.9116163,
+      "duration": 0.6942181587219238,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.2238119,
+      "end_time": 1750603915.9233103,
+      "duration": 0.6994984149932861,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.2105272,
+      "end_time": 1750603915.9328074,
+      "duration": 0.7222802639007568,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.219521,
+      "end_time": 1750603915.9358473,
+      "duration": 0.7163262367248535,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.227663,
+      "end_time": 1750603915.9386082,
+      "duration": 0.7109451293945312,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.2107065,
+      "end_time": 1750603915.9431481,
+      "duration": 0.7324416637420654,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.2210364,
+      "end_time": 1750603915.9466763,
+      "duration": 0.725639820098877,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.214516,
+      "end_time": 1750603915.9491758,
+      "duration": 0.7346599102020264,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.2327666,
+      "end_time": 1750603915.9529905,
+      "duration": 0.7202239036560059,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.215844,
+      "end_time": 1750603915.9544115,
+      "duration": 0.738567590713501,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.9647796,
+      "end_time": 1750603913.7116835,
+      "duration": -2.253096103668213,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.9631884,
+      "end_time": 1750603913.7128222,
+      "duration": -2.2503662109375,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.9567645,
+      "end_time": 1750603913.7270243,
+      "duration": -2.2297401428222656,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.9548104,
+      "end_time": 1750603913.7312756,
+      "duration": -2.2235348224639893,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.9563406,
+      "end_time": 1750603913.7381024,
+      "duration": -2.218238115310669,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.963507,
+      "end_time": 1750603913.7439327,
+      "duration": -2.219574213027954,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.9611542,
+      "end_time": 1750603913.7474406,
+      "duration": -2.2137136459350586,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.9594169,
+      "end_time": 1750603913.7507305,
+      "duration": -2.208686351776123,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.961498,
+      "end_time": 1750603913.7517235,
+      "duration": -2.2097744941711426,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603915.958993,
+      "end_time": 1750603913.7535613,
+      "duration": -2.2054316997528076,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.753907,
+      "end_time": 1750603914.086461,
+      "duration": 0.3325541019439697,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.7602894,
+      "end_time": 1750603914.0953782,
+      "duration": 0.33508872985839844,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.7563567,
+      "end_time": 1750603914.099565,
+      "duration": 0.34320831298828125,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.7556474,
+      "end_time": 1750603914.1050794,
+      "duration": 0.34943199157714844,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.7552214,
+      "end_time": 1750603914.1081994,
+      "duration": 0.352977991104126,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.756003,
+      "end_time": 1750603914.1110733,
+      "duration": 0.3550703525543213,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.761351,
+      "end_time": 1750603914.116049,
+      "duration": 0.35469794273376465,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.7673707,
+      "end_time": 1750603914.1168919,
+      "duration": 0.3495211601257324,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.7607586,
+      "end_time": 1750603914.1187932,
+      "duration": 0.358034610748291,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603913.764679,
+      "end_time": 1750603914.1196854,
+      "duration": 0.35500645637512207,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1336622,
+      "end_time": 1750603914.4384487,
+      "duration": 0.30478644371032715,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1200368,
+      "end_time": 1750603914.4458528,
+      "duration": 0.32581591606140137,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1266942,
+      "end_time": 1750603914.4510293,
+      "duration": 0.32433509826660156,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1234934,
+      "end_time": 1750603914.4526389,
+      "duration": 0.3291454315185547,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1251612,
+      "end_time": 1750603914.4551053,
+      "duration": 0.3299441337585449,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1293023,
+      "end_time": 1750603914.4587774,
+      "duration": 0.32947516441345215,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1205156,
+      "end_time": 1750603914.4627194,
+      "duration": 0.34220385551452637,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1372623,
+      "end_time": 1750603914.4639742,
+      "duration": 0.32671189308166504,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.131047,
+      "end_time": 1750603914.4654326,
+      "duration": 0.33438563346862793,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.1203036,
+      "end_time": 1750603914.4661987,
+      "duration": 0.34589505195617676,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4674122,
+      "end_time": 1750603914.802345,
+      "duration": 0.334932804107666,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4712446,
+      "end_time": 1750603914.8072536,
+      "duration": 0.33600902557373047,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4754987,
+      "end_time": 1750603914.8196428,
+      "duration": 0.3441441059112549,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4732347,
+      "end_time": 1750603914.8226655,
+      "duration": 0.34943079948425293,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.482142,
+      "end_time": 1750603914.824783,
+      "duration": 0.34264111518859863,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4751089,
+      "end_time": 1750603914.8273802,
+      "duration": 0.35227131843566895,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4702713,
+      "end_time": 1750603914.829029,
+      "duration": 0.35875773429870605,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4685464,
+      "end_time": 1750603914.830827,
+      "duration": 0.36228060722351074,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4664586,
+      "end_time": 1750603914.8315737,
+      "duration": 0.3651151657104492,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "ml_sentence_transformer__filter_content_by_semantic_similarity",
+      "start_time": 1750603914.4758177,
+      "end_time": 1750603914.833209,
+      "duration": 0.357391357421875,
+      "success": true,
+      "error_message": null,
+      "metadata": {
+        "model_type": "sentence_transformer",
+        "input_size": 0,
+        "throughput": 0
+      }
+    },
+    {
+      "operation_name": "system_throughput_test",
+      "start_time": 1750603915.2102895,
+      "end_time": 1750603914.8332784,
+      "duration": -0.3770110607147217,
+      "success": true,
+      "error_message": null,
+      "metadata": {}
+    }
+  ],
+  "agent_metrics": [
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.04372525215148926,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.2100232,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.6945681571960449,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.911647,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.7004897594451904,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.9233422,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.722447395324707,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.932838,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.7168641090393066,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.9358728,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.7128028869628906,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.9386337,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.7325713634490967,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.9431782,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.7259228229522705,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.9467037,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.73533034324646,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.9492009,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.7236430644989014,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.953023,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.7388684749603271,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603915.9544363,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.251831293106079,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.7117162,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.2486939430236816,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.7128415,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.229403018951416,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.727047,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.223299264907837,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.7313063,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.2167766094207764,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.7381358,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.219273805618286,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.7439651,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.2119858264923096,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.74747,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.2083218097686768,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.7507565,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.209456443786621,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.7517376,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": -2.2032244205474854,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603913.753574,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.332794189453125,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.0864859,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.33900928497314453,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.0954084,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3435478210449219,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.09959,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.34979987144470215,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.1051016,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.35422754287719727,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.1082287,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3554074764251709,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.1110938,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3552684783935547,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.1160707,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3521265983581543,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.1169052,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.35845065116882324,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.1188083,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3583049774169922,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.1196983,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3073854446411133,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.4384768,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.32601499557495117,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.4458866,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3258473873138428,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.451055,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3321106433868408,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.452655,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.33154940605163574,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.4551196,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.33203625679016113,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.4587939,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3424055576324463,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.4627383,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.33028483390808105,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.463995,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.33609962463378906,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.4654486,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.34609556198120117,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.4662092,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.33583545684814453,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.802366,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3369619846343994,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.8072758,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3444705009460449,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.8196685,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.35140490531921387,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.822688,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3489527702331543,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.8248043,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.35411906242370605,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.827398,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3604404926300049,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.8290439,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3633737564086914,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.8308403,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.36527156829833984,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.8315842,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    },
+    {
+      "agent_type": "filter",
+      "skill_name": "_filter_content_by_semantic_similarity",
+      "execution_time": 0.3576803207397461,
+      "success": true,
+      "memory_usage_mb": 0,
+      "cpu_usage_percent": 0.0,
+      "timestamp": 1750603914.8332198,
+      "metadata": {
+        "args_count": 1,
+        "kwargs_count": 0
+      }
+    }
+  ],
+  "summary": {
+    "performance": {
+      "ml_model_loading_sentence_transformer": {
+        "count": 1,
+        "total_duration": 3.0406250953674316,
+        "success_count": 1,
+        "avg_duration": 3.0406250953674316,
+        "success_rate": 1.0
+      },
+      "ml_model_loading_spacy": {
+        "count": 1,
+        "total_duration": 0.17182230949401855,
+        "success_count": 1,
+        "avg_duration": 0.17182230949401855,
+        "success_rate": 1.0
+      },
+      "ml_model_cached_loading": {
+        "count": 1,
+        "total_duration": 1.9311904907226562e-05,
+        "success_count": 1,
+        "avg_duration": 1.9311904907226562e-05,
+        "success_rate": 1.0
+      },
+      "ml_optimized_inference": {
+        "count": 1,
+        "total_duration": 0.6293895244598389,
+        "success_count": 1,
+        "avg_duration": 0.6293895244598389,
+        "success_rate": 1.0
+      },
+      "database_health_check": {
+        "count": 1,
+        "total_duration": 0.00027441978454589844,
+        "success_count": 1,
+        "avg_duration": 0.00027441978454589844,
+        "success_rate": 1.0
+      },
+      "database_connection_pool": {
+        "count": 1,
+        "total_duration": 4.839897155761719e-05,
+        "success_count": 1,
+        "avg_duration": 4.839897155761719e-05,
+        "success_rate": 1.0
+      },
+      "ml_sentence_transformer__filter_content_by_semantic_similarity": {
+        "count": 51,
+        "total_duration": -4.712591648101807,
+        "success_count": 51,
+        "avg_duration": -0.09240375780591778,
+        "success_rate": 1.0
+      },
+      "filter_agent_semantic_similarity": {
+        "count": 1,
+        "total_duration": 0.04376578330993652,
+        "success_count": 1,
+        "avg_duration": 0.04376578330993652,
+        "success_rate": 1.0
+      },
+      "summarise_agent_fallback": {
+        "count": 1,
+        "total_duration": 4.5299530029296875e-06,
+        "success_count": 0,
+        "avg_duration": 4.5299530029296875e-06,
+        "success_rate": 0.0
+      },
+      "system_throughput_test": {
+        "count": 1,
+        "total_duration": -0.3770110607147217,
+        "success_count": 1,
+        "avg_duration": -0.3770110607147217,
+        "success_rate": 1.0
+      }
+    },
+    "agent_performance": {
+      "filter": {
+        "_filter_content_by_semantic_similarity": {
+          "count": 51,
+          "total_execution_time": -4.64775538444519,
+          "success_count": 51,
+          "avg_execution_time": -0.09113245851853315,
+          "success_rate": 1.0,
+          "avg_memory_mb": 0.0,
+          "avg_cpu_percent": 0.0
+        }
+      }
+    },
+    "resource_averages": {
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0,
+      "memory_used_mb": 0.0,
+      "disk_usage_percent": 0.0,
+      "open_files": 0.0,
+      "active_connections": 0.0
+    }
+  }
+}

@@ -15,6 +15,7 @@ from google.api_core import exceptions as google_exceptions
 from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import BaseA2AAgent
 from reddit_watcher.config import Settings
+from reddit_watcher.performance.ml_model_cache import get_model_cache
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +56,11 @@ class SummariseAgent(BaseA2AAgent):
             max_requests_per_minute=self.config.gemini_rate_limit
         )
 
+        # Use optimized ML model cache
+        self._model_cache = get_model_cache()
+
         self._initialize_gemini()
-        self._initialize_spacy()
+        # Defer spaCy initialization for optimization
 
     def _initialize_gemini(self) -> None:
         """Initialize the Google Gemini client."""
@@ -74,24 +78,13 @@ class SummariseAgent(BaseA2AAgent):
             self.logger.error(f"Failed to initialize Gemini client: {e}")
             self._gemini_initialized = False
 
-    def _initialize_spacy(self) -> None:
-        """Initialize spaCy model for extractive summarization fallback."""
-        try:
-            # Try to load English model, fallback to basic if not available
-            try:
-                self._nlp_model = spacy.load("en_core_web_sm")
-            except OSError:
-                self.logger.warning(
-                    "en_core_web_sm not found, downloading basic model..."
-                )
-                # Create a basic pipeline for extractive summarization
-                self._nlp_model = spacy.blank("en")
-                self._nlp_model.add_pipe("sentencizer")
-
-            self.logger.info("spaCy model initialized for extractive fallback")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize spaCy model: {e}")
-            self._nlp_model = None
+    async def _ensure_spacy_model(self) -> spacy.language.Language:
+        """Ensure spaCy model is loaded with optimization."""
+        if self._nlp_model is None:
+            self._nlp_model = await self._model_cache.get_spacy_model(
+                model_name="en_core_web_sm", fallback_to_blank=True
+            )
+        return self._nlp_model
 
     async def _check_rate_limit(self) -> None:
         """Check and enforce rate limiting for Gemini API calls."""

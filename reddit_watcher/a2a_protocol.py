@@ -118,7 +118,16 @@ class AgentCard:
                 }
                 for skill in self.skills
             ],
-            "securitySchemes": self.securitySchemes or [],
+            "securitySchemes": [
+                {
+                    "name": scheme.name,
+                    "type": scheme.type,
+                    "description": scheme.description,
+                    **({"in": scheme.in_.value} if hasattr(scheme, "in_") else {}),
+                    **({"scheme": scheme.scheme} if hasattr(scheme, "scheme") else {}),
+                }
+                for scheme in (self.securitySchemes or [])
+            ],
         }
 
 

@@ -1,93 +1,30 @@
-# Development Docker Compose Configuration
-# This file provides a secure but development-friendly configuration
-# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+version: '3.8'
 
 services:
-  # Development overrides for easier debugging
-  db:
+  postgres:
+    image: postgres:15-alpine
     environment:
-      # Development uses weaker but known passwords for convenience
-      POSTGRES_DB: reddit_watcher_dev
-      POSTGRES_USER: reddit_dev
+      POSTGRES_DB: reddit_watcher
+      POSTGRES_USER: reddit_watcher_user
       POSTGRES_PASSWORD: dev_password_123
     ports:
-      # Expose database port for local development tools
-      - "5432:5432"
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reddit_watcher_user -d reddit_watcher"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-    command: redis-server --requirepass dev_redis_123 --appendonly yes
+    image: redis:7-alpine
+    command: redis-server --requirepass dev_redis_123
     ports:
-      # Expose Redis port for local development tools
-      - "6379:6379"
-
-  # Development agent configurations
-  retrieval-agent:
-    environment:
-      - DATABASE_URL=postgresql://reddit_dev:dev_password_123@db:5432/reddit_watcher_dev
-      - REDIS_URL=redis://default:dev_redis_123@redis:6379/0
-      - A2A_API_KEY=dev_api_key_123
-      # Use placeholder credentials for development
-      - REDDIT_CLIENT_ID=dev_client_id
-      - REDDIT_CLIENT_SECRET=dev_client_secret
+      - "16379:6379"
     volumes:
-      # Mount source code for hot reloading
-      - ./reddit_watcher:/app/reddit_watcher:ro
-      - ./tests:/app/tests:ro
-
-  filter-agent:
-    environment:
-      - DATABASE_URL=postgresql://reddit_dev:dev_password_123@db:5432/reddit_watcher_dev
-      - REDIS_URL=redis://default:dev_redis_123@redis:6379/0
-      - A2A_API_KEY=dev_api_key_123
-      - GEMINI_API_KEY=dev_gemini_key
-    volumes:
-      - ./reddit_watcher:/app/reddit_watcher:ro
-      - ./tests:/app/tests:ro
-
-  summarise-agent:
-    environment:
-      - DATABASE_URL=postgresql://reddit_dev:dev_password_123@db:5432/reddit_watcher_dev
-      - REDIS_URL=redis://default:dev_redis_123@redis:6379/0
-      - A2A_API_KEY=dev_api_key_123
-      - GEMINI_API_KEY=dev_gemini_key
-    volumes:
-      - ./reddit_watcher:/app/reddit_watcher:ro
-      - ./tests:/app/tests:ro
-
-  alert-agent:
-    environment:
-      - DATABASE_URL=postgresql://reddit_dev:dev_password_123@db:5432/reddit_watcher_dev
-      - REDIS_URL=redis://default:dev_redis_123@redis:6379/0
-      - A2A_API_KEY=dev_api_key_123
-      - SLACK_WEBHOOK_URL=https://hooks.slack.com/services/DEV/WEBHOOK/URL
-      - SMTP_SERVER=smtp.gmail.com
-      - SMTP_USERNAME=dev@example.com
-      - SMTP_PASSWORD=dev_smtp_password
-    volumes:
-      - ./reddit_watcher:/app/reddit_watcher:ro
-      - ./tests:/app/tests:ro
-
-  coordinator-agent:
-    environment:
-      - DATABASE_URL=postgresql://reddit_dev:dev_password_123@db:5432/reddit_watcher_dev
-      - REDIS_URL=redis://default:dev_redis_123@redis:6379/0
-      - A2A_API_KEY=dev_api_key_123
-      - MONITORING_TOPICS=Claude Code,Development
-    volumes:
-      - ./reddit_watcher:/app/reddit_watcher:ro
-      - ./tests:/app/tests:ro
+      - redis_data:/data
 
 volumes:
   postgres_data:
-    # Use local directory for development data persistence
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./dev-data/postgres
   redis_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./dev-data/redis

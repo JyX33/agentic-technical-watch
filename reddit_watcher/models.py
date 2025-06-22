@@ -670,9 +670,11 @@ def create_database_engine(
     max_overflow: int = 30,
     pool_pre_ping: bool = True,
     pool_recycle: int = 3600,
+    pool_timeout: int = 30,
+    pool_reset_on_return: str = "commit",
     echo: bool = False,
 ):
-    """Create SQLAlchemy engine with configurable connection pooling."""
+    """Create SQLAlchemy engine with optimized connection pooling."""
     return create_engine(
         database_url,
         echo=echo,  # Set to True for SQL logging
@@ -680,6 +682,8 @@ def create_database_engine(
         max_overflow=max_overflow,
         pool_pre_ping=pool_pre_ping,
         pool_recycle=pool_recycle,
+        pool_timeout=pool_timeout,
+        pool_reset_on_return=pool_reset_on_return,
     )
 
 

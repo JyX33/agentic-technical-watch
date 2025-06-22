@@ -1,0 +1,314 @@
+{
+  "stress_test_summary": {
+    "timestamp": 1750605257.2036188,
+    "total_tests": 7,
+    "successful_tests": 6,
+    "failed_tests": 1,
+    "test_success_rate": 0.8571428571428571,
+    "total_duration_seconds": 31.00014591217041
+  },
+  "operation_metrics": {
+    "total_operations": 164,
+    "successful_operations": 130,
+    "failed_operations": 34,
+    "operation_success_rate": 0.7926829268292683,
+    "average_throughput": 5.638975454734586
+  },
+  "performance_metrics": {
+    "peak_cpu_percent": 48.3,
+    "peak_memory_mb": 9776.46484375,
+    "average_response_time": 0.19145833086472583,
+    "p95_response_time": 0.3989115026262071,
+    "p99_response_time": 0.3989115026262071
+  },
+  "validation_results": {
+    "throughput_target": {
+      "target": 50,
+      "achieved": 60,
+      "passed": true
+    },
+    "response_time_target": {
+      "target": 5.0,
+      "achieved": 0.39079515139261883,
+      "passed": true
+    },
+    "reliability_target": {
+      "target": 0.99,
+      "achieved": 0.7926829268292683,
+      "passed": false
+    }
+  },
+  "production_readiness": {
+    "score": 0.7428571428571429,
+    "rating": "FAIR - Needs optimization before production",
+    "ready_for_production": false
+  },
+  "test_details": [
+    {
+      "test_name": "multi_topic_stress_test",
+      "success": true,
+      "duration": 3.5416767597198486,
+      "operations": 60,
+      "success_rate": 1.0,
+      "throughput": 16.94112819170603,
+      "peak_cpu": 45.7,
+      "peak_memory_mb": 9730.98046875,
+      "avg_response_time": 0.08112845420837403,
+      "error_count": 0,
+      "metadata": {
+        "target_posts": 60,
+        "topics_tested": 5,
+        "batch_size": 12,
+        "success_rate": 1.0
+      }
+    },
+    {
+      "test_name": "concurrent_agent_stress_test",
+      "success": true,
+      "duration": 4.510764837265015,
+      "operations": 20,
+      "success_rate": 1.0,
+      "throughput": 4.433837879282238,
+      "peak_cpu": 20.3,
+      "peak_memory_mb": 9701.40234375,
+      "avg_response_time": 0.1251366138458252,
+      "error_count": 0,
+      "metadata": {
+        "agents_tested": 5,
+        "rounds": 4,
+        "operations_per_round": 5,
+        "success_rate": 1.0
+      }
+    },
+    {
+      "test_name": "database_load_stress_test",
+      "success": false,
+      "duration": 1.8225581645965576,
+      "operations": 26,
+      "success_rate": 0.0,
+      "throughput": 0.0,
+      "peak_cpu": 21.3,
+      "peak_memory_mb": 9609.1875,
+      "avg_response_time": 0.0308990478515625,
+      "error_count": 10,
+      "metadata": {
+        "concurrent_connections": 5,
+        "batches": 5,
+        "total_connection_tests": 25,
+        "success_rate": 0.0
+      }
+    },
+    {
+      "test_name": "external_api_stress_test",
+      "success": true,
+      "duration": 8.470049619674683,
+      "operations": 18,
+      "success_rate": 1.0,
+      "throughput": 2.125135130045595,
+      "peak_cpu": 48.3,
+      "peak_memory_mb": 9716.73046875,
+      "avg_response_time": 0.3989115026262071,
+      "error_count": 0,
+      "metadata": {
+        "reddit_api_calls": 10,
+        "gemini_api_calls": 5,
+        "alert_deliveries": 3,
+        "rate_limiting_tested": true,
+        "success_rate": 1.0
+      }
+    },
+    {
+      "test_name": "circuit_breaker_stress_test",
+      "success": true,
+      "duration": 5.667168378829956,
+      "operations": 12,
+      "success_rate": 0.3333333333333333,
+      "throughput": 2.1174595843713964,
+      "peak_cpu": 26.1,
+      "peak_memory_mb": 9766.328125,
+      "avg_response_time": 0.1538853645324707,
+      "error_count": 5,
+      "metadata": {
+        "circuit_breaker_states": {
+          "CLOSED": 5,
+          "OPEN": 6,
+          "HALF_OPEN": 1
+        },
+        "final_state": "CLOSED",
+        "failure_threshold": 3,
+        "recovery_timeout": 2,
+        "state_transitions_detected": true
+      }
+    },
+    {
+      "test_name": "resource_exhaustion_test",
+      "success": true,
+      "duration": 2.8104307651519775,
+      "operations": 13,
+      "success_rate": 1.0,
+      "throughput": 4.625625424114302,
+      "peak_cpu": 28.6,
+      "peak_memory_mb": 9776.46484375,
+      "avg_response_time": 0.1594521815960224,
+      "error_count": 0,
+      "metadata": {
+        "initial_memory_percent": 31.5,
+        "final_memory_percent": 31.4,
+        "peak_memory_percent": 32.0,
+        "initial_cpu_percent": 13.8,
+        "final_cpu_percent": 31.7,
+        "peak_cpu_percent": 28.6,
+        "memory_tests": 10,
+        "cpu_tests": 3
+      }
+    },
+    {
+      "test_name": "end_to_end_workflow_stress_test",
+      "success": true,
+      "duration": 4.177497386932373,
+      "operations": 15,
+      "success_rate": 1.0,
+      "throughput": 3.5906665188879567,
+      "peak_cpu": 24.6,
+      "peak_memory_mb": 9588.8203125,
+      "avg_response_time": 0.39079515139261883,
+      "error_count": 0,
+      "metadata": {
+        "workflow_items": 15,
+        "batch_size": 5,
+        "workflow_stages": [
+          "filter",
+          "summarise"
+        ],
+        "success_rate": 1.0
+      }
+    }
+  ],
+  "recommendations": [
+    "Consider optimizing ML model inference pipeline - throughput below 20 posts/sec",
+    "High memory usage detected (9776MB) - implement memory optimization strategies",
+    "Database connection pool may need optimization - consider increasing pool size",
+    "Overall success rate (79.3%) below 95% - improve error handling and resilience"
+  ],
+  "capacity_planning": {
+    "current_performance": {
+      "peak_cpu_percent": 48.3,
+      "peak_memory_mb": 9776.46484375,
+      "best_throughput_per_sec": 16.94112819170603,
+      "estimated_daily_post_capacity": 243952.24596056683
+    },
+    "scaling_recommendations": [
+      "Memory scaling: Consider 4.9x scaling for memory-intensive operations"
+    ],
+    "resource_targets": {
+      "target_cpu_utilization": "50-70%",
+      "target_memory_utilization": "< 4GB per instance",
+      "target_response_time": "< 5 seconds",
+      "target_throughput": "> 50 posts per cycle"
+    },
+    "production_sizing": {
+      "recommended_cpu_cores": 2,
+      "recommended_memory_gb": 14,
+      "recommended_instances": 1
+    }
+  },
+  "bottleneck_analysis": {
+    "total_bottlenecks_identified": 12,
+    "bottleneck_categories": {
+      "high_memory_usage": [
+        {
+          "test": "multi_topic_stress_test",
+          "bottleneck": "high_memory_usage",
+          "value": 9730.98046875,
+          "description": "Peak memory usage 9731MB indicates potential memory bottleneck"
+        },
+        {
+          "test": "concurrent_agent_stress_test",
+          "bottleneck": "high_memory_usage",
+          "value": 9701.40234375,
+          "description": "Peak memory usage 9701MB indicates potential memory bottleneck"
+        },
+        {
+          "test": "database_load_stress_test",
+          "bottleneck": "high_memory_usage",
+          "value": 9609.1875,
+          "description": "Peak memory usage 9609MB indicates potential memory bottleneck"
+        },
+        {
+          "test": "external_api_stress_test",
+          "bottleneck": "high_memory_usage",
+          "value": 9716.73046875,
+          "description": "Peak memory usage 9717MB indicates potential memory bottleneck"
+        },
+        {
+          "test": "circuit_breaker_stress_test",
+          "bottleneck": "high_memory_usage",
+          "value": 9766.328125,
+          "description": "Peak memory usage 9766MB indicates potential memory bottleneck"
+        },
+        {
+          "test": "resource_exhaustion_test",
+          "bottleneck": "high_memory_usage",
+          "value": 9776.46484375,
+          "description": "Peak memory usage 9776MB indicates potential memory bottleneck"
+        },
+        {
+          "test": "end_to_end_workflow_stress_test",
+          "bottleneck": "high_memory_usage",
+          "value": 9588.8203125,
+          "description": "Peak memory usage 9589MB indicates potential memory bottleneck"
+        }
+      ],
+      "low_throughput": [
+        {
+          "test": "concurrent_agent_stress_test",
+          "bottleneck": "low_throughput",
+          "value": 4.433837879282238,
+          "description": "Throughput 4.4 ops/sec below optimal threshold"
+        },
+        {
+          "test": "external_api_stress_test",
+          "bottleneck": "low_throughput",
+          "value": 2.125135130045595,
+          "description": "Throughput 2.1 ops/sec below optimal threshold"
+        },
+        {
+          "test": "circuit_breaker_stress_test",
+          "bottleneck": "low_throughput",
+          "value": 2.1174595843713964,
+          "description": "Throughput 2.1 ops/sec below optimal threshold"
+        },
+        {
+          "test": "resource_exhaustion_test",
+          "bottleneck": "low_throughput",
+          "value": 4.625625424114302,
+          "description": "Throughput 4.6 ops/sec below optimal threshold"
+        },
+        {
+          "test": "end_to_end_workflow_stress_test",
+          "bottleneck": "low_throughput",
+          "value": 3.5906665188879567,
+          "description": "Throughput 3.6 ops/sec below optimal threshold"
+        }
+      ]
+    },
+    "primary_bottlenecks": [
+      "high_memory_usage (affected 7 tests)",
+      "low_throughput (affected 5 tests)"
+    ],
+    "mitigation_strategies": {
+      "low_throughput": [
+        "Increase batch processing sizes where appropriate",
+        "Implement parallel processing for independent operations",
+        "Optimize ML model inference with batching and caching",
+        "Consider horizontal scaling of processing instances"
+      ],
+      "high_memory_usage": [
+        "Implement memory-efficient data structures",
+        "Add memory pooling and reuse strategies",
+        "Implement streaming processing for large datasets",
+        "Add memory monitoring and garbage collection optimization"
+      ]
+    }
+  }
+}

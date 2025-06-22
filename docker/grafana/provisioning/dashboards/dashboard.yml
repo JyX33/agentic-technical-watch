@@ -1,0 +1,15 @@
+# ABOUTME: Grafana dashboard provisioning configuration for Reddit Technical Watcher
+# ABOUTME: Automatically loads monitoring dashboards from the dashboards directory
+
+apiVersion: 1
+
+providers:
+  - name: 'reddit-watcher-dashboards'
+    orgId: 1
+    folder: 'Reddit Watcher'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

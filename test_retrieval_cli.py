@@ -200,7 +200,7 @@ async def run_interactive_tests():
 
     # Initialize agent
     print("\n=== Initializing RetrievalAgent ===")
-    agent = RetrievalAgent()
+    agent = RetrievalAgent(settings)
 
     # Run tests
     tests = [

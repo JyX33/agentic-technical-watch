@@ -1,0 +1,164 @@
+# ABOUTME: Promtail configuration for log shipping to Loki
+# ABOUTME: Collects Docker container logs and system logs with proper labeling
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Docker container logs
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*log
+
+    pipeline_stages:
+      # Parse Docker JSON log format
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            attrs: attrs
+
+      # Extract container labels
+      - json:
+          source: attrs
+          expressions:
+            tag: attrs.tag
+
+      # Parse container name from tag
+      - regex:
+          source: tag
+          expression: '^[^/]+/(?P<container_name>[^:]+)'
+
+      # Add labels based on container name
+      - labels:
+          stream:
+          container_name:
+
+      # Add service-specific labels
+      - match:
+          selector: '{container_name=~"reddit-watcher-.*"}'
+          stages:
+            - regex:
+                source: container_name
+                expression: 'reddit-watcher-(?P<service>.*)'
+            - labels:
+                service:
+                system: reddit-watcher
+
+      # Parse structured JSON logs from Reddit Watcher agents
+      - match:
+          selector: '{service=~"coordinator-agent|retrieval-agent|filter-agent|summarise-agent|alert-agent"}'
+          stages:
+            - json:
+                expressions:
+                  timestamp: timestamp
+                  level: level
+                  message: message
+                  agent_type: agent_type
+                  request_id: request_id
+                  correlation_id: correlation_id
+                  operation: operation
+                  duration_ms: duration_ms
+                  error: error
+            - labels:
+                level:
+                agent_type:
+            - template:
+                source: formatted_message
+                template: '{{ .timestamp }} {{ .level }} [{{ .agent_type }}] {{ .message }}'
+            - output:
+                source: formatted_message
+
+  # System logs
+  - job_name: syslog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          __path__: /var/log/syslog
+
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<hostname>\S+)\s+(?P<service>\S+):\s+(?P<message>.*)'
+      - labels:
+          hostname:
+          service:
+      - timestamp:
+          source: timestamp
+          format: 'Jan 2 15:04:05'
+
+  # Application logs
+  - job_name: reddit-watcher-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: reddit-watcher-logs
+          __path__: /var/log/reddit-watcher/*.log
+
+    pipeline_stages:
+      # Try to parse as JSON first (structured logs)
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: message
+            agent_type: agent_type
+            request_id: request_id
+            correlation_id: correlation_id
+            operation: operation
+            duration_ms: duration_ms
+            error: error
+
+      # If JSON parsing fails, treat as plain text
+      - match:
+          selector: '{level=""}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+(?P<level>\w+)\s+(?P<message>.*)'
+            - labels:
+                level:
+
+      # Add labels for structured logs
+      - match:
+          selector: '{level!=""}'
+          stages:
+            - labels:
+                level:
+                agent_type:
+            - template:
+                source: correlation_id
+                template: '{{ if .correlation_id }}{{ .correlation_id }}{{ else }}no-correlation{{ end }}'
+            - labels:
+                correlation_id: correlation_id
+
+  # Nginx/Apache access logs (if present)
+  - job_name: access-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: access-logs
+          __path__: /var/log/nginx/access.log
+
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<remote_addr>\S+)\s+\S+\s+\S+\s+\[(?P<timestamp>[^\]]+)\]\s+"(?P<method>\S+)\s+(?P<path>\S+)\s+(?P<protocol>\S+)"\s+(?P<status>\d+)\s+(?P<size>\d+)\s+"(?P<referer>[^"]*)"\s+"(?P<user_agent>[^"]*)"'
+      - labels:
+          method:
+          status:
+      - timestamp:
+          source: timestamp
+          format: '02/Jan/2006:15:04:05 -0700'

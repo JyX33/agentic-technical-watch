@@ -1,0 +1,188 @@
+# ABOUTME: Blackbox exporter configuration for endpoint monitoring
+# ABOUTME: Provides HTTP, TCP, and ICMP probes for external service monitoring
+
+modules:
+  # HTTP probes
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: []  # Defaults to 2xx
+      method: GET
+      headers:
+        Host: vhost.example.com
+        Accept-Language: en-US
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      fail_if_body_matches_regexp:
+        - "Could not connect to database"
+      fail_if_body_not_matches_regexp:
+        - "Reddit Technical Watcher"
+      fail_if_header_matches:
+        - header: "Content-Type"
+          regexp: "application/json"
+          allow_missing: true
+      fail_if_header_not_matches:
+        - header: "Cache-Control"
+          regexp: "no-cache"
+          allow_missing: true
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4" # defaults to "ip6"
+      ip_protocol_fallback: false  # no fallback to "ip6"
+
+  http_post_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: POST
+      headers:
+        Content-Type: application/json
+      body: '{"test": "data"}'
+
+  # Health check probe for Reddit Watcher agents
+  reddit_watcher_health:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        Accept: application/json
+      fail_if_body_not_matches_regexp:
+        - '"overall_status":\s*"healthy"'
+      preferred_ip_protocol: "ip4"
+
+  # Agent card probe
+  reddit_watcher_agent_card:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        Accept: application/json
+      fail_if_body_not_matches_regexp:
+        - '"agent_type":'
+        - '"capabilities":'
+      preferred_ip_protocol: "ip4"
+
+  # Reddit API probe
+  reddit_api_probe:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 429]  # 429 is rate limit, still indicates API is up
+      method: GET
+      headers:
+        User-Agent: "RedditWatcher/1.0"
+      fail_if_ssl: false
+      preferred_ip_protocol: "ip4"
+
+  # Slack webhook probe
+  slack_webhook_probe:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 400]  # 400 might be returned for invalid payload, but indicates webhook is up
+      method: POST
+      headers:
+        Content-Type: application/json
+      body: '{"text": "Health check from Reddit Watcher monitoring"}'
+      fail_if_ssl: false
+      preferred_ip_protocol: "ip4"
+
+  # TCP probes
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+
+  # Database connection probe
+  postgres_tcp:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: "ip4"
+
+  # Redis connection probe
+  redis_tcp:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: "ip4"
+
+  # ICMP probes
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: "ip4"
+      source_ip_address: "127.0.0.1"
+
+  # DNS probes
+  dns_reddit:
+    prober: dns
+    timeout: 5s
+    dns:
+      query_name: "reddit.com"
+      query_type: "A"
+      valid_rcodes:
+        - NOERROR
+      validate_answer_rrs:
+        fail_if_matches_regexp:
+          - ".*127.0.0.1"
+        fail_if_not_matches_regexp:
+          - ".*"
+      validate_authority_rrs:
+        fail_if_matches_regexp:
+          - ".*127.0.0.1"
+      validate_additional_rrs:
+        fail_if_matches_regexp:
+          - ".*127.0.0.1"
+      preferred_ip_protocol: "ip4"
+
+  # SMTP probe for email alerts
+  smtp_starttls:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      query_response:
+        - expect: "^220.*"
+        - send: "EHLO prober\r\n"
+        - expect: "^250-STARTTLS"
+        - send: "STARTTLS\r\n"
+        - expect: "^220.*"
+        - starttls: true
+        - send: "EHLO prober\r\n"
+        - expect: "^250.*"
+        - send: "QUIT\r\n"
+
+  # IMAP probe
+  imap_starttls:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      query_response:
+        - expect: "* OK.*IMAP.*"
+        - send: ". CAPABILITY\r\n"
+        - expect: "\\* CAPABILITY IMAP4rev1.*STARTTLS.*"
+        - send: ". STARTTLS\r\n"
+        - expect: "\\. OK.*"
+        - starttls: true
+        - send: ". CAPABILITY\r\n"
+        - expect: "\\* CAPABILITY IMAP4rev1.*"
+
+  # SSH probe
+  ssh_banner:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      query_response:
+        - expect: "^SSH-2.0-.*"
+        - send: "SSH-2.0-blackbox-ssh-check\r\n"

@@ -1,0 +1,38 @@
+{
+  "timestamp": 1750603963.0715964,
+  "base_url": "http://127.0.0.1:8099",
+  "tests": [
+    {
+      "test": "public_endpoint_health",
+      "status": "PASS",
+      "message": "Health endpoint accessible"
+    },
+    {
+      "test": "auth_required_endpoint",
+      "status": "FAIL",
+      "message": "Protected endpoint returned 403 instead of 401"
+    },
+    {
+      "test": "valid_api_key",
+      "status": "PASS",
+      "message": "Valid API key accepted"
+    },
+    {
+      "test": "invalid_api_key",
+      "status": "PASS",
+      "message": "Invalid API key properly rejected (403)"
+    },
+    {
+      "test": "security_headers",
+      "status": "PASS",
+      "message": "Security headers present: ['X-Content-Type-Options', 'X-Frame-Options', 'X-XSS-Protection', 'Content-Security-Policy']"
+    },
+    {
+      "test": "rate_limit_headers",
+      "status": "PASS",
+      "message": "Rate limit headers present: ['X-RateLimit-Limit', 'X-RateLimit-Remaining']"
+    }
+  ],
+  "passed": 5,
+  "failed": 1
+}

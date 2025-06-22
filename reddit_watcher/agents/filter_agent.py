@@ -15,6 +15,8 @@ from reddit_watcher.agents.base import BaseA2AAgent
 from reddit_watcher.config import Settings
 from reddit_watcher.database.utils import get_db_session
 from reddit_watcher.models import ContentFilter, RedditComment, RedditPost
+from reddit_watcher.performance.decorators import agent_skill_monitor, ml_model_monitor
+from reddit_watcher.performance.ml_model_cache import get_model_cache
 
 logger = logging.getLogger(__name__)
 
@@ -39,31 +41,20 @@ class FilterAgent(BaseA2AAgent):
             version="1.0.0",
         )
 
-        # Initialize semantic similarity model
+        # Use optimized ML model cache
+        self._model_cache = get_model_cache()
         self._semantic_model: SentenceTransformer | None = None
-        self._initialize_semantic_model()
 
         # Cache for topic embeddings to avoid recomputation
         self._topic_embeddings: dict[str, np.ndarray] = {}
 
-    def _initialize_semantic_model(self) -> None:
-        """Initialize the sentence transformer model for semantic similarity."""
-        try:
-            # Use a lightweight, fast model optimized for semantic similarity
-            model_name = "all-MiniLM-L6-v2"
-            logger.info(f"Initializing semantic similarity model: {model_name}")
-
-            # Initialize in thread to avoid blocking
-            def load_model():
-                return SentenceTransformer(model_name)
-
-            # Load model synchronously during initialization
-            self._semantic_model = load_model()
-            logger.info("Semantic similarity model initialized successfully")
-
-        except Exception as e:
-            logger.error(f"Failed to initialize semantic similarity model: {e}")
-            self._semantic_model = None
+    async def _ensure_semantic_model(self) -> SentenceTransformer:
+        """Ensure semantic similarity model is loaded with optimization."""
+        if self._semantic_model is None:
+            self._semantic_model = await self._model_cache.get_sentence_transformer(
+                model_name="all-MiniLM-L6-v2", use_gpu=True
+            )
+        return self._semantic_model
 
     def get_skills(self) -> list[AgentSkill]:
         """Return list of skills this agent can perform."""
@@ -289,17 +280,12 @@ class FilterAgent(BaseA2AAgent):
             start = pos + 1
         return positions
 
+    @agent_skill_monitor()
+    @ml_model_monitor("sentence_transformer")
     async def _filter_content_by_semantic_similarity(
         self, parameters: dict[str, Any]
     ) -> dict[str, Any]:
-        """Filter content using semantic similarity."""
-        if not self._semantic_model:
-            return {
-                "skill": "filter_content_by_semantic_similarity",
-                "status": "error",
-                "error": "Semantic similarity model not initialized",
-            }
-
+        """Filter content using semantic similarity with optimized model cache."""
         content = parameters.get("content", "")
         title = parameters.get("title", "")
         topics = parameters.get("topics", self.config.reddit_topics)
@@ -312,12 +298,15 @@ class FilterAgent(BaseA2AAgent):
             }
 
         try:
+            # Ensure model is loaded
+            model = await self._ensure_semantic_model()
+
             # Combine title and content
             combined_text = f"{title} {content}".strip()
 
-            # Compute semantic similarity
-            similarity_results = await asyncio.to_thread(
-                self._compute_semantic_similarity, combined_text, topics
+            # Compute semantic similarity with optimization
+            similarity_results = await self._compute_semantic_similarity_optimized(
+                combined_text, topics, model
             )
 
             return {
@@ -343,10 +332,58 @@ class FilterAgent(BaseA2AAgent):
                 "error": str(e),
             }
 
+    async def _compute_semantic_similarity_optimized(
+        self, text: str, topics: list[str], model: SentenceTransformer
+    ) -> dict[str, Any]:
+        """Compute semantic similarity between text and topics with optimization."""
+        # Use optimized encoding from model cache
+        text_embeddings = await self._model_cache.encode_texts_optimized(
+            model, [text], batch_size=1
+        )
+        text_embedding = text_embeddings[0].reshape(1, -1)
+
+        # Get or compute topic embeddings using optimized encoding
+        topic_similarities = {}
+        max_similarity = 0.0
+        best_topic = None
+
+        # Get all missing topic embeddings in batch for efficiency
+        missing_topics = [
+            topic for topic in topics if topic not in self._topic_embeddings
+        ]
+        if missing_topics:
+            topic_embeddings = await self._model_cache.encode_texts_optimized(
+                model, missing_topics, batch_size=32
+            )
+            for i, topic in enumerate(missing_topics):
+                self._topic_embeddings[topic] = topic_embeddings[i]
+
+        # Compute similarities
+        for topic in topics:
+            topic_embedding = self._topic_embeddings[topic].reshape(1, -1)
+
+            # Compute cosine similarity
+            similarity = cosine_similarity(text_embedding, topic_embedding)[0][0]
+            topic_similarities[topic] = float(similarity)
+
+            if similarity > max_similarity:
+                max_similarity = similarity
+                best_topic = topic
+
+        return {
+            "max_similarity": float(max_similarity),
+            "best_topic": best_topic,
+            "topic_similarities": topic_similarities,
+        }
+
     def _compute_semantic_similarity(
         self, text: str, topics: list[str]
     ) -> dict[str, Any]:
-        """Compute semantic similarity between text and topics."""
+        """Legacy method - kept for backward compatibility."""
+        # Fallback to synchronous computation if needed
+        if not self._semantic_model:
+            raise RuntimeError("Semantic model not initialized")
+
         # Encode the input text
         text_embedding = self._semantic_model.encode([text])
 

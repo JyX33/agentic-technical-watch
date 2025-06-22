@@ -8,11 +8,13 @@ import json
 import sys
 
 from reddit_watcher.agents.test_agent import MockA2AAgent
+from reddit_watcher.config import create_config
 
 
 async def main():
     """Main CLI function."""
-    agent = MockA2AAgent()
+    config = create_config()
+    agent = MockA2AAgent(config)
 
     print(f"=== {agent.name} ===")
     print(f"Type: {agent.agent_type}")

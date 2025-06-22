@@ -1,0 +1,60 @@
+{
+  "test_metadata": {
+    "test_type": "workflow_simulation",
+    "timestamp": "2025-06-22T14:39:47.884734+00:00",
+    "framework": "WorkflowSimulator v1.0"
+  },
+  "pipeline_stages": {
+    "collection": {
+      "workflow_id": 6,
+      "total_posts": 51,
+      "topics_processed": 3,
+      "subreddits_processed": 3,
+      "execution_time": 0.052721261978149414,
+      "throughput": 967.3516544641363
+    },
+    "filtering": {
+      "workflow_id": 6,
+      "total_posts_analyzed": 51,
+      "relevant_posts": 19,
+      "filter_records": 51,
+      "relevance_percentage": 37.254901960784316,
+      "execution_time": 0.017255783081054688
+    },
+    "summarization": {
+      "workflow_id": 6,
+      "relevant_posts_processed": 19,
+      "summaries_created": 3,
+      "execution_time": 0.032256364822387695
+    },
+    "alerts": {
+      "workflow_id": 6,
+      "summaries_processed": 3,
+      "alerts_sent": 6,
+      "execution_time": 0.015208005905151367
+    },
+    "validation": {
+      "workflows": 1,
+      "posts": 51,
+      "filters": 51,
+      "summaries": 3,
+      "alert_batches": 3,
+      "alerts": 6,
+      "data_flow_complete": true
+    },
+    "performance": {
+      "total_execution_time": 0,
+      "stage_breakdown": {
+        "collection": 0,
+        "filtering": 0,
+        "summarization": 0,
+        "alerts": 0
+      },
+      "performance_score": 100.0
+    }
+  },
+  "overall_score": 100.0,
+  "recommendations": [
+    "Simulation passed all checks - pipeline is functioning correctly"
+  ]
+}

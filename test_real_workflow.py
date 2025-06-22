@@ -8,6 +8,7 @@ import sys
 from datetime import UTC, datetime
 
 from reddit_watcher.agents.coordinator_agent import CoordinatorAgent
+from reddit_watcher.config import get_settings
 
 
 def setup_logging():
@@ -23,7 +24,8 @@ async def test_coordinator_health():
     """Test coordinator agent health check."""
     print("🏥 Testing CoordinatorAgent Health Check...")
 
-    coordinator = CoordinatorAgent()
+    config = get_settings()
+    coordinator = CoordinatorAgent(config)
 
     try:
         result = await coordinator.execute_skill("health_check", {})
@@ -55,7 +57,8 @@ async def test_workflow_status():
     """Test getting workflow status."""
     print("\n📈 Testing Workflow Status...")
 
-    coordinator = CoordinatorAgent()
+    config = get_settings()
+    coordinator = CoordinatorAgent(config)
 
     try:
         result = await coordinator.execute_skill("get_workflow_status", {"limit": 5})
@@ -86,7 +89,8 @@ async def test_agent_status_check():
     """Test checking all agent statuses."""
     print("\n🔍 Testing Agent Status Check...")
 
-    coordinator = CoordinatorAgent()
+    config = get_settings()
+    coordinator = CoordinatorAgent(config)
 
     try:
         result = await coordinator.execute_skill("check_agent_status", {})
@@ -124,7 +128,8 @@ async def test_monitoring_cycle_dry_run():
     print("⚠️  Note: This will try to communicate with other agents")
     print("   Make sure they're running or expect connection errors")
 
-    coordinator = CoordinatorAgent()
+    config = get_settings()
+    coordinator = CoordinatorAgent(config)
 
     try:
         # Use a minimal test topic to avoid flooding Reddit API
