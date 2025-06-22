@@ -1,108 +1,231 @@
 services:
-  # PostgreSQL database
+  # PostgreSQL database with secure configuration
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: reddit_watcher
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${DB_NAME:-reddit_watcher}
+      POSTGRES_USER: ${DB_USER:-reddit_watcher_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Database password required}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-reddit_watcher_user} -d ${DB_NAME:-reddit_watcher}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
 
-  # Redis for A2A service discovery and caching
+  # Redis for A2A service discovery and caching with password protection
   redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:?Redis password required} --appendonly yes --save 60 1000
     volumes:
       - redis_data:/data
+    networks:
+      - internal
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
 
-  # A2A Agent Services
+  # A2A Agent Services with secure configuration
   retrieval-agent:
-    build: .
+    build:
+      context: .
+      target: runtime
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://${DB_USER:-reddit_watcher_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-reddit_watcher}
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
       - AGENT_TYPE=retrieval
       - AGENT_PORT=8001
+      - A2A_API_KEY=${A2A_API_KEY:?API key required}
+      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID:?Reddit client ID required}
+      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET:?Reddit client secret required}
+      - REDDIT_USER_AGENT=${REDDIT_USER_AGENT:-Reddit Technical Watcher v1.0.0}
+    networks:
+      - internal
+      - external
     ports:
-      - "8001:8001"
+      - "${RETRIEVAL_PORT:-8001}:8001"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
     command: ["python", "-m", "reddit_watcher.agents.retrieval"]
 
   filter-agent:
-    build: .
+    build:
+      context: .
+      target: runtime
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://${DB_USER:-reddit_watcher_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-reddit_watcher}
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
       - AGENT_TYPE=filter
       - AGENT_PORT=8002
+      - A2A_API_KEY=${A2A_API_KEY:?API key required}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:?Gemini API key required}
+    networks:
+      - internal
+      - external
     ports:
-      - "8002:8002"
+      - "${FILTER_PORT:-8002}:8002"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
     command: ["python", "-m", "reddit_watcher.agents.filtering"]
 
   summarise-agent:
-    build: .
+    build:
+      context: .
+      target: runtime
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://${DB_USER:-reddit_watcher_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-reddit_watcher}
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
       - AGENT_TYPE=summarise
       - AGENT_PORT=8003
+      - A2A_API_KEY=${A2A_API_KEY:?API key required}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:?Gemini API key required}
+    networks:
+      - internal
+      - external
     ports:
-      - "8003:8003"
+      - "${SUMMARISE_PORT:-8003}:8003"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.75'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
     command: ["python", "-m", "reddit_watcher.agents.summarise"]
 
   alert-agent:
-    build: .
+    build:
+      context: .
+      target: runtime
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://${DB_USER:-reddit_watcher_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-reddit_watcher}
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
       - AGENT_TYPE=alert
       - AGENT_PORT=8004
+      - A2A_API_KEY=${A2A_API_KEY:?API key required}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - EMAIL_RECIPIENTS=${EMAIL_RECIPIENTS}
+    networks:
+      - internal
+      - external
     ports:
-      - "8004:8004"
+      - "${ALERT_PORT:-8004}:8004"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
     command: ["python", "-m", "reddit_watcher.agents.alerting"]
 
   coordinator-agent:
-    build: .
+    build:
+      context: .
+      target: runtime
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/reddit_watcher
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://${DB_USER:-reddit_watcher_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-reddit_watcher}
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
       - AGENT_TYPE=coordinator
       - AGENT_PORT=8000
+      - A2A_API_KEY=${A2A_API_KEY:?API key required}
+      - RETRIEVAL_AGENT_URL=http://retrieval-agent:8001
+      - FILTER_AGENT_URL=http://filter-agent:8002
+      - SUMMARISE_AGENT_URL=http://summarise-agent:8003
+      - ALERT_AGENT_URL=http://alert-agent:8004
+      - MONITORING_TOPICS=${MONITORING_TOPICS:-Claude Code}
+      - MONITORING_INTERVAL_HOURS=${MONITORING_INTERVAL_HOURS:-4}
+    networks:
+      - internal
+      - external
     ports:
-      - "8000:8000"
+      - "${COORDINATOR_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -116,8 +239,54 @@ services:
         condition: service_started
       alert-agent:
         condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
     command: ["python", "-m", "reddit_watcher.agents.coordinator"]
+
+networks:
+  # Internal network for service-to-service communication
+  # Isolated from external access for security
+  internal:
+    driver: bridge
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+    driver_opts:
+      com.docker.network.bridge.name: reddit_watcher_internal
+
+  # External network for services that need internet access
+  # Only coordinator and agents need external access
+  external:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
+    driver_opts:
+      com.docker.network.bridge.name: reddit_watcher_external
 
 volumes:
   postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/postgres
   redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/redis

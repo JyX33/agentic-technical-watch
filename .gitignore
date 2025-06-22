@@ -85,7 +85,38 @@ cover/
 .env.local
 .env.production
 .env.development
+.env.dev
+.env.test
+.env.staging
+.env.*
+!.env.example
 
 # A2A specific
 agent_state/
 .a2a/
+
+# Docker data directories
+data/
+dev-data/
+postgres-data/
+redis-data/
+
+# Development and debugging files
+.debug/
+debug.log
+*.debug
+.trace/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Local configuration overrides
+local_config.py
+config.local.py
+settings.local.py
+
+# Runtime files
+*.pid
+*.sock
