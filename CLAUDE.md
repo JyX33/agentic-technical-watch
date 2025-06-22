@@ -136,6 +136,27 @@ Settings are managed via Pydantic with `.env` file support:
 - `GEMINI_API_KEY`: Google Gemini for summarization
 - `SLACK_WEBHOOK_URL` / `SMTP_*`: Notification channels
 
+## Security
+
+**Environment Variables**: All sensitive configuration is managed through environment variables and **never committed to version control**.
+
+**Credential Management**:
+- Copy `.env.example` to `.env` and populate with your actual API keys and credentials
+- The `.env` file is automatically ignored by git via `.gitignore`
+- Never commit real API keys, tokens, or credentials to the repository
+- Use placeholder values in `.env.example` for documentation purposes
+
+**Required Credentials**:
+- `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`: Reddit API application credentials
+- `GEMINI_API_KEY`: Google Gemini API key for AI summarization
+- `SLACK_WEBHOOK_URL` / `SMTP_*`: Optional notification service credentials
+
+**Security Best Practices**:
+- Rotate API keys regularly
+- Use least-privilege access for service accounts
+- Monitor API usage for anomalies
+- Keep dependencies updated via `uv sync`
+
 ## Key Design Patterns
 
 **A2A Protocol Compliance**: All agents implement Google's A2A standard for interoperability.
