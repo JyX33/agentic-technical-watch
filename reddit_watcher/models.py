@@ -11,9 +11,11 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
+    UniqueConstraint,
     create_engine,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -108,24 +110,34 @@ class RedditPost(Base):
     __tablename__ = "reddit_posts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    reddit_id: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    post_id: Mapped[str] = mapped_column(
+        String(20), unique=True, nullable=False
+    )  # Reddit post ID
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     content: Mapped[str | None] = mapped_column(Text)
     url: Mapped[str | None] = mapped_column(String(2000))
     author: Mapped[str | None] = mapped_column(String(100))
+    subreddit: Mapped[str] = mapped_column(
+        String(100), nullable=False
+    )  # Subreddit name
     score: Mapped[int] = mapped_column(Integer, default=0)
     upvote_ratio: Mapped[float | None] = mapped_column(Float)
     num_comments: Mapped[int] = mapped_column(Integer, default=0)
+    is_self: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_video: Mapped[bool] = mapped_column(Boolean, default=False)
+    over_18: Mapped[bool] = mapped_column(Boolean, default=False)
+    permalink: Mapped[str | None] = mapped_column(String(500))
+    topic: Mapped[str | None] = mapped_column(String(200))  # Monitoring topic
     created_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
-    retrieved_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(  # Alias for compatibility
         DateTime(timezone=True), server_default=func.now()
     )
 
     # Foreign keys
-    subreddit_id: Mapped[int] = mapped_column(
-        ForeignKey("subreddits.id"), nullable=False
+    subreddit_fk_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subreddits.id"), nullable=True
     )
 
     # Relationships
@@ -144,10 +156,15 @@ class RedditComment(Base):
     __tablename__ = "reddit_comments"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    reddit_id: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    comment_id: Mapped[str] = mapped_column(
+        String(20), unique=True, nullable=False
+    )  # Reddit comment ID
+    post_id: Mapped[str] = mapped_column(String(20), nullable=False)  # Parent post ID
     body: Mapped[str] = mapped_column(Text, nullable=False)
     author: Mapped[str | None] = mapped_column(String(100))
     score: Mapped[int] = mapped_column(Integer, default=0)
+    parent_id: Mapped[str | None] = mapped_column(String(20))  # Parent comment ID
+    permalink: Mapped[str | None] = mapped_column(String(500))
     is_submitter: Mapped[bool] = mapped_column(Boolean, default=False)
     created_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
@@ -157,11 +174,11 @@ class RedditComment(Base):
     )
 
     # Foreign keys
-    post_id: Mapped[int | None] = mapped_column(ForeignKey("reddit_posts.id"))
-    subreddit_id: Mapped[int] = mapped_column(
-        ForeignKey("subreddits.id"), nullable=False
+    post_fk_id: Mapped[int | None] = mapped_column(ForeignKey("reddit_posts.id"))
+    subreddit_fk_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subreddits.id"), nullable=True
     )
-    parent_comment_id: Mapped[int | None] = mapped_column(
+    parent_comment_fk_id: Mapped[int | None] = mapped_column(
         ForeignKey("reddit_comments.id")
     )
 
@@ -244,9 +261,21 @@ class ContentSummary(Base):
 
 
 class A2ATask(Base):
-    """A2A protocol task tracking for workflow orchestration."""
+    """A2A protocol task tracking for workflow orchestration with idempotency."""
 
     __tablename__ = "a2a_tasks"
+    __table_args__ = (
+        UniqueConstraint("task_id", name="uix_a2a_tasks_task_id"),
+        UniqueConstraint(
+            "agent_type",
+            "skill_name",
+            "parameters_hash",
+            "workflow_id",
+            name="uix_a2a_tasks_idempotency",
+        ),
+        Index("ix_a2a_tasks_status_created", "status", "created_at"),
+        Index("ix_a2a_tasks_workflow_status", "workflow_id", "status"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     task_id: Mapped[str] = mapped_column(
@@ -257,10 +286,24 @@ class A2ATask(Base):
     )  # e.g., "retrieval", "filter"
     skill_name: Mapped[str] = mapped_column(String(100), nullable=False)
     parameters: Mapped[dict] = mapped_column(JSONType)
+    parameters_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False
+    )  # SHA256 hash of parameters for idempotency
     status: Mapped[TaskStatus] = mapped_column(
         Enum(TaskStatus), default=TaskStatus.PENDING
     )
     priority: Mapped[int] = mapped_column(Integer, default=5)  # 1=highest, 10=lowest
+
+    # Idempotency and state management
+    idempotency_key: Mapped[str | None] = mapped_column(String(100))
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    content_hash: Mapped[str | None] = mapped_column(
+        String(64)
+    )  # Hash of content being processed
+    lock_token: Mapped[str | None] = mapped_column(
+        String(100)
+    )  # For distributed locking
+    lock_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Execution tracking
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -268,10 +311,17 @@ class A2ATask(Base):
     error_message: Mapped[str | None] = mapped_column(Text)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
     max_retries: Mapped[int] = mapped_column(Integer, default=3)
+    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Workflow context
     workflow_id: Mapped[str | None] = mapped_column(String(100))
     parent_task_id: Mapped[str | None] = mapped_column(String(100))
+
+    # Result tracking
+    result_data: Mapped[dict | None] = mapped_column(JSONType)
+    result_hash: Mapped[str | None] = mapped_column(
+        String(64)
+    )  # Hash of result for caching
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
@@ -360,6 +410,15 @@ class AlertDelivery(Base):
     """Individual alert delivery tracking per channel."""
 
     __tablename__ = "alert_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "alert_batch_id",
+            "channel",
+            "recipient",
+            name="uix_alert_deliveries_idempotency",
+        ),
+        Index("ix_alert_deliveries_status_created", "status", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     alert_batch_id: Mapped[int] = mapped_column(
@@ -388,6 +447,195 @@ class AlertDelivery(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class AgentState(Base):
+    """Agent state synchronization and coordination."""
+
+    __tablename__ = "agent_states"
+    __table_args__ = (
+        UniqueConstraint("agent_id", name="uix_agent_states_agent_id"),
+        Index("ix_agent_states_status_updated", "status", "last_updated"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    agent_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(50), default="idle"
+    )  # idle, busy, error, offline
+
+    # State data
+    state_data: Mapped[dict] = mapped_column(JSONType, default=dict)
+    capabilities: Mapped[list] = mapped_column(JSONType, default=list)
+    current_task_id: Mapped[str | None] = mapped_column(String(36))
+
+    # Health monitoring
+    heartbeat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    error_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_error: Mapped[str | None] = mapped_column(Text)
+
+    # Performance metrics
+    tasks_completed: Mapped[int] = mapped_column(Integer, default=0)
+    tasks_failed: Mapped[int] = mapped_column(Integer, default=0)
+    avg_execution_time_ms: Mapped[float | None] = mapped_column(Float)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_updated: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class TaskRecovery(Base):
+    """Task recovery state for interrupted or failed operations."""
+
+    __tablename__ = "task_recoveries"
+    __table_args__ = (
+        UniqueConstraint("task_id", name="uix_task_recoveries_task_id"),
+        Index("ix_task_recoveries_status_created", "recovery_status", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    task_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=False)
+    original_task_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    recovery_status: Mapped[str] = mapped_column(
+        String(50), default="pending"
+    )  # pending, recovering, completed, failed
+
+    # Recovery strategy
+    recovery_strategy: Mapped[str] = mapped_column(
+        String(100), nullable=False
+    )  # retry, rollback, skip, manual
+    recovery_attempt: Mapped[int] = mapped_column(Integer, default=0)
+    max_recovery_attempts: Mapped[int] = mapped_column(Integer, default=3)
+
+    # Recovery data
+    checkpoint_data: Mapped[dict | None] = mapped_column(
+        JSONType
+    )  # State at failure point
+    recovery_parameters: Mapped[dict | None] = mapped_column(
+        JSONType
+    )  # Custom recovery params
+    failure_reason: Mapped[str | None] = mapped_column(Text)
+
+    # Recovery execution
+    recovery_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    recovery_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    recovery_error: Mapped[str | None] = mapped_column(Text)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ContentDeduplication(Base):
+    """Content deduplication tracking to prevent reprocessing."""
+
+    __tablename__ = "content_deduplication"
+    __table_args__ = (
+        UniqueConstraint("content_hash", name="uix_content_deduplication_hash"),
+        UniqueConstraint(
+            "content_type", "external_id", name="uix_content_deduplication_external"
+        ),
+        Index(
+            "ix_content_deduplication_type_processed", "content_type", "processed_at"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    content_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, nullable=False
+    )  # SHA256 of content
+    content_type: Mapped[ContentType] = mapped_column(Enum(ContentType), nullable=False)
+    external_id: Mapped[str] = mapped_column(
+        String(100), nullable=False
+    )  # Reddit ID, etc.
+
+    # Processing status
+    processing_status: Mapped[str] = mapped_column(
+        String(50), default="new"
+    )  # new, processing, completed, failed
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # Metadata
+    source_agent: Mapped[str | None] = mapped_column(String(100))
+    workflow_id: Mapped[str | None] = mapped_column(String(100))
+    extra_data: Mapped[dict | None] = mapped_column(JSONType)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+# Additional models for CoordinatorAgent compatibility
+
+
+class AgentTask(Base):
+    """Agent task tracking for workflow coordination (alias for A2ATask)."""
+
+    __tablename__ = "agent_tasks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    workflow_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    agent_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    task_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    task_data: Mapped[dict] = mapped_column(JSONType)
+    result_data: Mapped[dict | None] = mapped_column(JSONType)
+    status: Mapped[str] = mapped_column(String(50), default="pending")
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WorkflowExecution(Base):
+    """Workflow execution tracking for coordinator agent."""
+
+    __tablename__ = "workflow_executions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    topics: Mapped[list] = mapped_column(JSONType)
+    subreddits: Mapped[list] = mapped_column(JSONType)
+    status: Mapped[str] = mapped_column(String(50), default="running")
+
+    # Execution metrics
+    posts_processed: Mapped[int | None] = mapped_column(Integer, default=0)
+    comments_processed: Mapped[int | None] = mapped_column(Integer, default=0)
+    relevant_items: Mapped[int | None] = mapped_column(Integer, default=0)
+    summaries_created: Mapped[int | None] = mapped_column(Integer, default=0)
+    alerts_sent: Mapped[int | None] = mapped_column(Integer, default=0)
+
+    # Error tracking
+    error_message: Mapped[str | None] = mapped_column(Text)
+
+    # Timestamps
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 # Database utilities
