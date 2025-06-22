@@ -97,10 +97,10 @@ class Subreddit(Base):
 
     # Relationships
     posts: Mapped[list["RedditPost"]] = relationship(
-        "RedditPost", back_populates="subreddit_obj"
+        "RedditPost", back_populates="subreddit_obj", cascade="all, delete-orphan"
     )
     comments: Mapped[list["RedditComment"]] = relationship(
-        "RedditComment", back_populates="subreddit_obj"
+        "RedditComment", back_populates="subreddit_obj", cascade="all, delete-orphan"
     )
 
 
@@ -137,7 +137,7 @@ class RedditPost(Base):
 
     # Foreign keys
     subreddit_fk_id: Mapped[int | None] = mapped_column(
-        ForeignKey("subreddits.id"), nullable=True
+        ForeignKey("subreddits.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships
@@ -176,12 +176,14 @@ class RedditComment(Base):
     )
 
     # Foreign keys
-    post_fk_id: Mapped[int | None] = mapped_column(ForeignKey("reddit_posts.id"))
+    post_fk_id: Mapped[int | None] = mapped_column(
+        ForeignKey("reddit_posts.id", ondelete="CASCADE")
+    )
     subreddit_fk_id: Mapped[int | None] = mapped_column(
-        ForeignKey("subreddits.id"), nullable=True
+        ForeignKey("subreddits.id", ondelete="SET NULL"), nullable=True
     )
     parent_comment_fk_id: Mapped[int | None] = mapped_column(
-        ForeignKey("reddit_comments.id")
+        ForeignKey("reddit_comments.id", ondelete="CASCADE")
     )
 
     # Relationships
@@ -193,6 +195,12 @@ class RedditComment(Base):
     )
     parent_comment: Mapped[Optional["RedditComment"]] = relationship(
         "RedditComment", remote_side=[id]
+    )
+    child_comments: Mapped[list["RedditComment"]] = relationship(
+        "RedditComment",
+        foreign_keys="RedditComment.parent_comment_fk_id",
+        cascade="all, delete-orphan",
+        overlaps="parent_comment",
     )
     content_filters: Mapped[list["ContentFilter"]] = relationship(
         "ContentFilter", back_populates="comment", cascade="all, delete-orphan"
@@ -218,8 +226,12 @@ class ContentFilter(Base):
     )
 
     # Foreign keys (one-to-one with content)
-    post_id: Mapped[int | None] = mapped_column(ForeignKey("reddit_posts.id"))
-    comment_id: Mapped[int | None] = mapped_column(ForeignKey("reddit_comments.id"))
+    post_id: Mapped[int | None] = mapped_column(
+        ForeignKey("reddit_posts.id", ondelete="CASCADE")
+    )
+    comment_id: Mapped[int | None] = mapped_column(
+        ForeignKey("reddit_comments.id", ondelete="CASCADE")
+    )
 
     # Relationships
     post: Mapped[RedditPost | None] = relationship(
@@ -229,7 +241,7 @@ class ContentFilter(Base):
         "RedditComment", back_populates="content_filters"
     )
     summaries: Mapped[list["ContentSummary"]] = relationship(
-        "ContentSummary", back_populates="content_filter"
+        "ContentSummary", back_populates="content_filter", cascade="all, delete-orphan"
     )
 
 
@@ -251,7 +263,7 @@ class ContentSummary(Base):
 
     # Foreign keys
     content_filter_id: Mapped[int] = mapped_column(
-        ForeignKey("content_filters.id"), nullable=False
+        ForeignKey("content_filters.id", ondelete="CASCADE"), nullable=False
     )
 
     # Relationships
@@ -406,8 +418,10 @@ class AlertBatch(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    # Relationships would need association table for many-to-many
-    # summaries: Mapped[list[ContentSummary]] = relationship("ContentSummary", secondary="alert_summary_association")
+    # Relationships
+    deliveries: Mapped[list["AlertDelivery"]] = relationship(
+        "AlertDelivery", back_populates="alert_batch", cascade="all, delete-orphan"
+    )
 
 
 class AlertDelivery(Base):
@@ -426,7 +440,7 @@ class AlertDelivery(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     alert_batch_id: Mapped[int] = mapped_column(
-        ForeignKey("alert_batches.id"), nullable=False
+        ForeignKey("alert_batches.id", ondelete="CASCADE"), nullable=False
     )
     channel: Mapped[str] = mapped_column(String(50), nullable=False)  # "slack", "email"
     status: Mapped[AlertStatus] = mapped_column(
@@ -443,6 +457,11 @@ class AlertDelivery(Base):
     delivery_time_ms: Mapped[int | None] = mapped_column(Integer)
     error_message: Mapped[str | None] = mapped_column(Text)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Relationships
+    alert_batch: Mapped[AlertBatch] = relationship(
+        "AlertBatch", back_populates="deliveries"
+    )
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
