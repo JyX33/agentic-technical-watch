@@ -11,7 +11,7 @@ from email.mime.text import MIMEText
 from typing import Any
 
 import aiohttp
-from jinja2 import Template
+from jinja2 import BaseLoader, Environment, Template, select_autoescape
 
 from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import (
@@ -39,6 +39,11 @@ class AlertAgent(BaseA2AAgent):
             name="Alert Notification Agent",
             description="Delivers notifications via Slack webhooks and SMTP email with rich formatting",
             version="1.0.0",
+        )
+
+        # Configure Jinja2 with autoescape for security
+        self.jinja_env = Environment(
+            autoescape=select_autoescape(["html", "xml"]), loader=BaseLoader()
         )
 
         # Template cache for message formatting
@@ -348,15 +353,15 @@ class AlertAgent(BaseA2AAgent):
         return html_content, text_content
 
     def _get_html_template(self, template_name: str) -> Template:
-        """Get or create HTML email template."""
+        """Get or create HTML email template with proper escaping."""
         if template_name not in self._email_template_cache:
-            # Default HTML template
+            # Default HTML template with proper escaping
             html_template = """
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ subject }}</title>
+    <title>{{ subject | e }}</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .header { background-color: #f4f4f4; padding: 20px; text-align: center; }
@@ -370,27 +375,29 @@ class AlertAgent(BaseA2AAgent):
     </style>
 </head>
 <body>
-    <div class="header priority-{{ priority }}">
-        <h1>{{ priority_emoji }} {{ subject }}</h1>
+    <div class="header priority-{{ priority | e }}">
+        <h1>{{ priority_emoji | e }} {{ subject | e }}</h1>
     </div>
     <div class="content">
-        <p>{{ message | replace('\n', '<br>') }}</p>
+        <p>{{ message | e | replace('\n', '<br>') | safe }}</p>
         {% if metadata %}
         <div class="metadata">
             <h3>Additional Information:</h3>
             {% for key, value in metadata.items() %}
-            <p><strong>{{ key | replace('_', ' ') | title }}:</strong> {{ value }}</p>
+            <p><strong>{{ key | e | replace('_', ' ') | title }}:</strong> {{ value | e }}</p>
             {% endfor %}
         </div>
         {% endif %}
     </div>
     <div class="footer">
-        <p>Reddit Technical Watcher • {{ timestamp }}</p>
+        <p>Reddit Technical Watcher • {{ timestamp | e }}</p>
     </div>
 </body>
 </html>
             """.strip()
-            self._email_template_cache[template_name] = Template(html_template)
+            self._email_template_cache[template_name] = self.jinja_env.from_string(
+                html_template
+            )
 
         return self._email_template_cache[template_name]
 
@@ -413,7 +420,10 @@ Additional Information:
 Reddit Technical Watcher
 {{ timestamp }}
             """.strip()
-            self._email_template_cache["text"] = Template(text_template)
+            # Text templates don't need autoescape, but we use the same environment for consistency
+            self._email_template_cache["text"] = self.jinja_env.from_string(
+                text_template
+            )
 
         return self._email_template_cache["text"]
 
