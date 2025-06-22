@@ -1,6 +1,7 @@
 # ABOUTME: Configuration management for Reddit Technical Watcher using Pydantic BaseSettings
 # ABOUTME: Provides unified settings for A2A agents, databases, and external APIs with .env support
 
+from typing import Any
 from urllib.parse import urlparse
 
 from pydantic import Field, field_validator
@@ -180,6 +181,32 @@ class Settings(BaseSettings):
         description="Minimum relevance score for content filtering",
     )
 
+    # Circuit Breaker Configuration
+    circuit_breaker_enabled: bool = Field(
+        default=True,
+        description="Enable circuit breaker pattern for agent communication",
+    )
+    circuit_breaker_failure_threshold: int = Field(
+        default=5,
+        description="Number of consecutive failures to open circuit breaker",
+    )
+    circuit_breaker_recovery_timeout: int = Field(
+        default=60,
+        description="Seconds to wait before attempting circuit breaker recovery",
+    )
+    circuit_breaker_success_threshold: int = Field(
+        default=3,
+        description="Successful calls needed in HALF_OPEN to close circuit breaker",
+    )
+    circuit_breaker_half_open_max_calls: int = Field(
+        default=5,
+        description="Maximum calls allowed in HALF_OPEN state",
+    )
+    circuit_breaker_call_timeout: float = Field(
+        default=30.0,
+        description="Maximum timeout for individual calls through circuit breaker",
+    )
+
     @field_validator("database_url")
     @classmethod
     def validate_database_url(cls, v):
@@ -226,6 +253,50 @@ class Settings(BaseSettings):
             raise ValueError("A2A port must be between 1024 and 65535")
         return v
 
+    @field_validator("circuit_breaker_failure_threshold")
+    @classmethod
+    def validate_circuit_breaker_failure_threshold(cls, v):
+        """Validate circuit breaker failure threshold."""
+        if v < 1:
+            raise ValueError("Circuit breaker failure threshold must be at least 1")
+        if v > 100:
+            raise ValueError("Circuit breaker failure threshold should not exceed 100")
+        return v
+
+    @field_validator("circuit_breaker_recovery_timeout")
+    @classmethod
+    def validate_circuit_breaker_recovery_timeout(cls, v):
+        """Validate circuit breaker recovery timeout."""
+        if v < 1:
+            raise ValueError(
+                "Circuit breaker recovery timeout must be at least 1 second"
+            )
+        if v > 3600:
+            raise ValueError(
+                "Circuit breaker recovery timeout should not exceed 1 hour"
+            )
+        return v
+
+    @field_validator("circuit_breaker_success_threshold")
+    @classmethod
+    def validate_circuit_breaker_success_threshold(cls, v):
+        """Validate circuit breaker success threshold."""
+        if v < 1:
+            raise ValueError("Circuit breaker success threshold must be at least 1")
+        if v > 20:
+            raise ValueError("Circuit breaker success threshold should not exceed 20")
+        return v
+
+    @field_validator("circuit_breaker_call_timeout")
+    @classmethod
+    def validate_circuit_breaker_call_timeout(cls, v):
+        """Validate circuit breaker call timeout."""
+        if v <= 0:
+            raise ValueError("Circuit breaker call timeout must be positive")
+        if v > 300:
+            raise ValueError("Circuit breaker call timeout should not exceed 5 minutes")
+        return v
+
     def get_agent_urls(self) -> dict[str, str]:
         """Get all A2A agent URLs as a dictionary."""
         return {
@@ -255,6 +326,17 @@ class Settings(BaseSettings):
     def has_smtp_config(self) -> bool:
         """Check if SMTP configuration is complete."""
         return bool(self.smtp_server and self.smtp_username and self.smtp_password)
+
+    def get_circuit_breaker_config(self) -> dict[str, Any]:
+        """Get circuit breaker configuration as a dictionary."""
+        return {
+            "enabled": self.circuit_breaker_enabled,
+            "failure_threshold": self.circuit_breaker_failure_threshold,
+            "recovery_timeout": self.circuit_breaker_recovery_timeout,
+            "success_threshold": self.circuit_breaker_success_threshold,
+            "half_open_max_calls": self.circuit_breaker_half_open_max_calls,
+            "call_timeout": self.circuit_breaker_call_timeout,
+        }
 
 
 # Singleton instance (maintained for backward compatibility)

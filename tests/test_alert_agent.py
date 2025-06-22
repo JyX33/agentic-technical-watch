@@ -9,7 +9,7 @@ import pytest
 from aioresponses import aioresponses
 
 from reddit_watcher.agents.alert_agent import AlertAgent
-from reddit_watcher.config import reset_settings
+from reddit_watcher.config import reset_settings, create_config
 
 
 class TestAlertAgent:
@@ -34,7 +34,8 @@ class TestAlertAgent:
     @pytest.fixture
     def alert_agent(self):
         """Create AlertAgent instance for testing."""
-        return AlertAgent()
+        config = create_config()
+        return AlertAgent(config)
 
     def test_agent_initialization(self, alert_agent):
         """Test AlertAgent initialization and basic properties."""

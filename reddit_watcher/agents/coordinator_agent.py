@@ -11,6 +11,11 @@ from sqlalchemy import and_, desc
 
 from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import BaseA2AAgent
+from reddit_watcher.circuit_breaker import (
+    CircuitBreakerError,
+    get_circuit_breaker,
+    get_circuit_breaker_registry,
+)
 from reddit_watcher.config import Settings
 from reddit_watcher.database.utils import get_db_session
 from reddit_watcher.models import (
@@ -60,6 +65,13 @@ class CoordinatorAgent(BaseA2AAgent):
         self._retry_delay = 30  # seconds
         self._timeout = 300  # 5 minutes
 
+        # Circuit breaker configuration
+        self._circuit_breakers_enabled = self.config.circuit_breaker_enabled
+        self._circuit_breaker_config = self.config.get_circuit_breaker_config()
+
+        # Circuit breaker registry
+        self._circuit_breaker_registry = get_circuit_breaker_registry()
+
     async def _ensure_http_session(self) -> aiohttp.ClientSession:
         """Ensure HTTP session is initialized for A2A communication."""
         if not self._http_session or self._http_session.closed:
@@ -89,6 +101,22 @@ class CoordinatorAgent(BaseA2AAgent):
             except Exception as e:
                 logger.warning(f"Error closing HTTP session: {e}")
         self._http_session = None
+
+    async def _get_circuit_breaker(self, agent_name: str):
+        """Get or create circuit breaker for a specific agent."""
+        if not self._circuit_breakers_enabled:
+            return None
+
+        circuit_breaker_name = f"coordinator_to_{agent_name}"
+        return await get_circuit_breaker(
+            name=circuit_breaker_name,
+            failure_threshold=self._circuit_breaker_config["failure_threshold"],
+            recovery_timeout=self._circuit_breaker_config["recovery_timeout"],
+            success_threshold=self._circuit_breaker_config["success_threshold"],
+            half_open_max_calls=self._circuit_breaker_config["half_open_max_calls"],
+            call_timeout=self._circuit_breaker_config["call_timeout"],
+            expected_exception=(aiohttp.ClientError, asyncio.TimeoutError),
+        )
 
     def get_skills(self) -> list[AgentSkill]:
         """Return list of skills this agent can perform."""
@@ -138,6 +166,15 @@ class CoordinatorAgent(BaseA2AAgent):
                 outputModes=["application/json"],
                 examples=[],
             ),
+            AgentSkill(
+                id="get_circuit_breaker_status",
+                name="get_circuit_breaker_status",
+                description="Get status and metrics of all circuit breakers",
+                tags=["circuit_breaker", "resilience", "monitoring"],
+                inputModes=["application/json"],
+                outputModes=["application/json"],
+                examples=[],
+            ),
         ]
 
     async def execute_skill(
@@ -154,6 +191,8 @@ class CoordinatorAgent(BaseA2AAgent):
             return await self._recover_failed_workflow(parameters)
         elif skill_name == "get_workflow_status":
             return await self._get_workflow_status(parameters)
+        elif skill_name == "get_circuit_breaker_status":
+            return await self._get_circuit_breaker_status(parameters)
         else:
             raise ValueError(f"Unknown skill: {skill_name}")
 
@@ -177,12 +216,21 @@ class CoordinatorAgent(BaseA2AAgent):
         # Check recent workflow executions
         workflow_status = await self._get_recent_workflow_status()
 
+        # Check circuit breaker status
+        circuit_breaker_status = {}
+        if self._circuit_breakers_enabled:
+            circuit_breaker_status = self._circuit_breaker_registry.get_health_summary()
+
         health_status["coordinator_specific"] = {
             "managed_agents": list(self._agent_endpoints.keys()),
             "agent_status": agent_status,
             "recent_workflows": workflow_status,
             "http_session_active": self._http_session is not None
             and not self._http_session.closed,
+            "circuit_breakers": {
+                "enabled": self._circuit_breakers_enabled,
+                **circuit_breaker_status,
+            },
         }
 
         return {
@@ -750,28 +798,94 @@ class CoordinatorAgent(BaseA2AAgent):
     async def _delegate_to_agent(
         self, agent_name: str, task_params: dict[str, Any], workflow_id: int
     ) -> dict[str, Any]:
-        """Delegate a task to a specific agent via A2A protocol."""
+        """Delegate a task to a specific agent via A2A protocol with circuit breaker protection."""
         endpoint = self._agent_endpoints.get(agent_name)
         if not endpoint:
             raise ValueError(f"Unknown agent: {agent_name}")
 
+        # Get circuit breaker for this agent
+        circuit_breaker = await self._get_circuit_breaker(agent_name)
+
+        # Create agent task record
+        task_id = await self._create_agent_task(workflow_id, agent_name, task_params)
+
+        if circuit_breaker:
+            # Use circuit breaker protection
+            try:
+                result = await circuit_breaker.call(
+                    self._make_agent_request, agent_name, endpoint, task_params, task_id
+                )
+                await self._complete_agent_task(task_id, "completed", result)
+                return result
+
+            except CircuitBreakerError as e:
+                error_msg = f"Circuit breaker is open for {agent_name} agent: {str(e)}"
+                logger.error(error_msg)
+                await self._complete_agent_task(
+                    task_id, "failed", {"error": error_msg, "circuit_breaker": "open"}
+                )
+                return {"status": "error", "error": error_msg}
+
+            except Exception as e:
+                error_msg = f"Error communicating with {agent_name} agent: {str(e)}"
+                logger.error(error_msg)
+                await self._complete_agent_task(task_id, "failed", {"error": error_msg})
+                return {"status": "error", "error": error_msg}
+        else:
+            # Fallback to original retry logic without circuit breaker
+            return await self._delegate_to_agent_without_circuit_breaker(
+                agent_name, endpoint, task_params, task_id
+            )
+
+    async def _make_agent_request(
+        self, agent_name: str, endpoint: str, task_params: dict[str, Any], task_id: int
+    ) -> dict[str, Any]:
+        """Make a single agent request (used by circuit breaker)."""
+        session = await self._ensure_http_session()
+
+        try:
+            async with session.post(
+                f"{endpoint}/execute",
+                json=task_params,
+                timeout=aiohttp.ClientTimeout(
+                    total=self._circuit_breaker_config["call_timeout"]
+                ),
+            ) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    return result
+                else:
+                    error_text = await response.text()
+                    error_msg = f"HTTP {response.status}: {error_text}"
+                    # Raise exception to trigger circuit breaker
+                    raise aiohttp.ClientResponseError(
+                        request_info=response.request_info,
+                        history=response.history,
+                        status=response.status,
+                        message=error_msg,
+                    )
+        except TimeoutError:
+            logger.warning(f"Request to {agent_name} agent timed out")
+            raise
+        except aiohttp.ClientError:
+            logger.warning(f"Client error communicating with {agent_name} agent")
+            raise
+
+    async def _delegate_to_agent_without_circuit_breaker(
+        self, agent_name: str, endpoint: str, task_params: dict[str, Any], task_id: int
+    ) -> dict[str, Any]:
+        """Fallback delegation method without circuit breaker (original retry logic)."""
         session = await self._ensure_http_session()
         retries = 0
 
         while retries <= self._max_retries:
             try:
-                # Create agent task record
-                task_id = await self._create_agent_task(
-                    workflow_id, agent_name, task_params
-                )
-
                 # Make A2A request
                 async with session.post(
                     f"{endpoint}/execute", json=task_params
                 ) as response:
                     if response.status == 200:
                         result = await response.json()
-                        await self._complete_agent_task(task_id, "completed", result)
                         return result
                     else:
                         error_text = await response.text()
@@ -790,9 +904,6 @@ class CoordinatorAgent(BaseA2AAgent):
                             retries += 1
                             continue
                         else:
-                            await self._complete_agent_task(
-                                task_id, "failed", {"error": error_msg}
-                            )
                             return {"status": "error", "error": error_msg}
 
             except TimeoutError:
@@ -808,9 +919,6 @@ class CoordinatorAgent(BaseA2AAgent):
                     retries += 1
                     continue
                 else:
-                    await self._complete_agent_task(
-                        task_id, "failed", {"error": error_msg}
-                    )
                     return {"status": "error", "error": error_msg}
 
             except Exception as e:
@@ -826,9 +934,6 @@ class CoordinatorAgent(BaseA2AAgent):
                     retries += 1
                     continue
                 else:
-                    await self._complete_agent_task(
-                        task_id, "failed", {"error": error_msg}
-                    )
                     return {"status": "error", "error": error_msg}
 
     async def _create_agent_task(
@@ -1089,6 +1194,50 @@ class CoordinatorAgent(BaseA2AAgent):
                 "error": str(e),
             }
 
+    async def _get_circuit_breaker_status(
+        self, parameters: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Get status and metrics of all circuit breakers."""
+        if not self._circuit_breakers_enabled:
+            return {
+                "skill": "get_circuit_breaker_status",
+                "status": "success",
+                "result": {
+                    "enabled": False,
+                    "message": "Circuit breakers are disabled",
+                },
+            }
+
+        try:
+            # Get overall health summary
+            health_summary = self._circuit_breaker_registry.get_health_summary()
+
+            # Get detailed metrics for each circuit breaker
+            detailed_metrics = self._circuit_breaker_registry.get_all_metrics()
+
+            # Get configuration
+            config = self._circuit_breaker_config.copy()
+            config["enabled"] = self._circuit_breakers_enabled
+
+            return {
+                "skill": "get_circuit_breaker_status",
+                "status": "success",
+                "result": {
+                    "configuration": config,
+                    "health_summary": health_summary,
+                    "detailed_metrics": detailed_metrics,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                },
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting circuit breaker status: {e}")
+            return {
+                "skill": "get_circuit_breaker_status",
+                "status": "error",
+                "error": str(e),
+            }
+
     def get_health_status(self) -> dict[str, Any]:
         """Get detailed health status for this agent."""
         base_health = self.get_common_health_status()
@@ -1101,6 +1250,15 @@ class CoordinatorAgent(BaseA2AAgent):
                 "max_retries": self._max_retries,
                 "retry_delay": self._retry_delay,
                 "timeout": self._timeout,
+            },
+            "circuit_breakers": {
+                "enabled": self._circuit_breakers_enabled,
+                "configuration": self._circuit_breaker_config,
+                "health_summary": (
+                    self._circuit_breaker_registry.get_health_summary()
+                    if self._circuit_breakers_enabled
+                    else {"message": "Circuit breakers are disabled"}
+                ),
             },
         }
 
