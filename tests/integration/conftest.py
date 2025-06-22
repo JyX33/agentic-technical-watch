@@ -140,7 +140,7 @@ def test_correlation_id():
 
 
 # Pytest markers for different test categories
-pytest_plugins = []
+# pytest_plugins moved to root conftest.py to avoid deprecation warning
 
 
 def pytest_configure(config):

@@ -9,7 +9,7 @@ import pytest
 from aioresponses import aioresponses
 
 from reddit_watcher.agents.alert_agent import AlertAgent
-from reddit_watcher.config import reset_settings, create_config
+from reddit_watcher.config import create_config, reset_settings
 
 
 class TestAlertAgent:
