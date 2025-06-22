@@ -63,6 +63,9 @@ logs/
 *.sqlite
 *.sqlite3
 
+# Generated output files (organized in output/ directory)
+output/
+
 # Temporary files
 *.tmp
 *.temp

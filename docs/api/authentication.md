@@ -9,17 +9,20 @@ The Reddit Technical Watcher API supports multiple authentication methods to ens
 API Key authentication is the recommended method for service-to-service communication.
 
 **Header Format:**
+
 ```http
 X-API-Key: your-api-key-here
 ```
 
 **Example Request:**
+
 ```bash
 curl -H "X-API-Key: your-api-key" \
      http://localhost:8000/skills/health_check
 ```
 
 **Configuration:**
+
 ```env
 A2A_API_KEY=your-secure-api-key-here
 ```
@@ -29,17 +32,20 @@ A2A_API_KEY=your-secure-api-key-here
 Bearer token authentication is suitable for user-based access and temporary tokens.
 
 **Header Format:**
+
 ```http
 Authorization: Bearer your-token-here
 ```
 
 **Example Request:**
+
 ```bash
 curl -H "Authorization: Bearer your-token" \
      http://localhost:8000/skills/orchestrate_workflow
 ```
 
 **Configuration:**
+
 ```env
 A2A_BEARER_TOKEN=your-bearer-token-here
 JWT_SECRET=your-jwt-secret-key
@@ -52,6 +58,7 @@ For development and testing, authentication can be disabled.
 **⚠️ Warning:** Never use in production environments.
 
 **Configuration:**
+
 ```env
 A2A_API_KEY=
 A2A_BEARER_TOKEN=
@@ -102,6 +109,7 @@ API rate limiting prevents abuse and ensures service availability:
 - **Whitelist**: `127.0.0.1` and `::1` are exempt
 
 **Rate limit headers:**
+
 ```http
 X-RateLimit-Limit: 60
 X-RateLimit-Remaining: 45
@@ -113,11 +121,13 @@ X-RateLimit-Reset: 1640995200
 Cross-Origin Resource Sharing (CORS) settings:
 
 **Development:**
+
 ```env
 CORS_ALLOWED_ORIGINS=["*"]  # Allows all origins
 ```
 
 **Production:**
+
 ```env
 CORS_ALLOWED_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
 ```
@@ -127,6 +137,7 @@ CORS_ALLOWED_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
 ### Common Error Responses
 
 **Missing Authentication:**
+
 ```json
 {
   "error": "Authentication required",
@@ -136,6 +147,7 @@ CORS_ALLOWED_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
 ```
 
 **Invalid API Key:**
+
 ```json
 {
   "error": "Invalid API key",
@@ -145,6 +157,7 @@ CORS_ALLOWED_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
 ```
 
 **Invalid Bearer Token:**
+
 ```json
 {
   "error": "Invalid token",
@@ -154,6 +167,7 @@ CORS_ALLOWED_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
 ```
 
 **Rate Limit Exceeded:**
+
 ```json
 {
   "error": "Rate limit exceeded",
@@ -168,6 +182,7 @@ CORS_ALLOWED_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
 ### For API Keys
 
 1. **Generate Strong Keys**
+
    ```bash
    # Generate a secure API key
    python -c "import secrets; print(secrets.token_urlsafe(32))"
@@ -191,6 +206,7 @@ CORS_ALLOWED_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
 ### For Bearer Tokens
 
 1. **JWT Token Validation**
+
    ```python
    # Example JWT validation
    import jwt
@@ -213,6 +229,7 @@ CORS_ALLOWED_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
 ### For Production Deployment
 
 1. **Enable All Security Features**
+
    ```env
    SECURITY_HEADERS_ENABLED=true
    RATE_LIMIT_REQUESTS_PER_MINUTE=60

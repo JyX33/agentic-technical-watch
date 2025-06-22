@@ -57,7 +57,7 @@ uv run pytest tests/test_a2a_base.py
 uv run pytest --cov=reddit_watcher
 
 # Test A2A agent functionality
-uv run python test_agent_cli.py
+uv run python tests/cli/test_agent_cli.py
 ```
 
 ### Code Quality
@@ -105,7 +105,7 @@ docs/
 Dockerfile                # Multi-stage Docker build with uv
 docker-compose.yml        # Development services (Redis, PostgreSQL)
 pyproject.toml           # uv project configuration
-test_agent_cli.py        # Manual A2A agent testing CLI
+tests/cli/test_agent_cli.py        # Manual A2A agent testing CLI
 ```
 
 ## A2A Agent Architecture
@@ -177,7 +177,7 @@ Settings are managed via Pydantic with `.env` file support:
 - **Integration Tests**: A2A protocol compliance and agent communication (planned)
 - **Agent Card Validation**: JSON schema validation for service discovery
 - **Health Check Tests**: Service monitoring and discovery validation
-- **CLI Testing**: Manual validation via `test_agent_cli.py`
+- **CLI Testing**: Manual validation via `tests/cli/test_agent_cli.py`
 
 ## Development Workflow
 

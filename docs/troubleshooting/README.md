@@ -5,6 +5,7 @@ Comprehensive troubleshooting procedures for the Reddit Technical Watcher system
 ## Quick Diagnosis
 
 ### System Health Check
+
 ```bash
 # Quick system status
 ./scripts/health-check.sh
@@ -19,24 +20,28 @@ docker-compose ps
 ### Common Issue Patterns
 
 **🔴 System Completely Down**
+
 - No response from any agent
 - Load balancer returning 503
 - Database connection failures
 → See: [System Failure](./system-failure.md)
 
 **🟡 Partial Service Degradation**
+
 - Some agents responding, others not
 - Slow response times
 - Intermittent failures
 → See: [Performance Issues](./performance-issues.md)
 
 **🟠 External API Issues**
+
 - Reddit API failures
 - Gemini API errors
 - Rate limiting problems
 → See: [External API Issues](./external-api-issues.md)
 
 **🔵 Configuration Problems**
+
 - Authentication failures
 - Environment variable issues
 - Database migration problems
@@ -45,11 +50,13 @@ docker-compose ps
 ## Troubleshooting Guides
 
 ### System-Level Issues
+
 - **[System Failure](./system-failure.md)** - Complete system down scenarios
 - **[Performance Issues](./performance-issues.md)** - Slow response times and resource problems
 - **[Network Issues](./network-issues.md)** - Connectivity and communication problems
 
 ### Agent-Specific Issues
+
 - **[Coordinator Agent](./coordinator-agent.md)** - Workflow orchestration problems
 - **[Retrieval Agent](./retrieval-agent.md)** - Reddit API and data collection issues
 - **[Filter Agent](./filter-agent.md)** - Content filtering and relevance problems
@@ -57,11 +64,13 @@ docker-compose ps
 - **[Alert Agent](./alert-agent.md)** - Notification delivery problems
 
 ### Infrastructure Issues
+
 - **[Database Issues](./database-issues.md)** - PostgreSQL problems and solutions
 - **[Redis Issues](./redis-issues.md)** - Service discovery and caching problems
 - **[Docker Issues](./docker-issues.md)** - Container and orchestration problems
 
 ### External Dependencies
+
 - **[External API Issues](./external-api-issues.md)** - Reddit, Gemini, and other API problems
 - **[Configuration Issues](./configuration-issues.md)** - Environment and configuration problems
 - **[Security Issues](./security-issues.md)** - Authentication and authorization problems
@@ -69,6 +78,7 @@ docker-compose ps
 ## Diagnostic Tools
 
 ### System Diagnostics
+
 ```bash
 # Comprehensive system check
 ./scripts/system-diagnostics.sh
@@ -81,6 +91,7 @@ docker-compose ps
 ```
 
 ### Agent Diagnostics
+
 ```bash
 # Agent health and metrics
 ./scripts/agent-diagnostics.sh [agent-name]
@@ -93,6 +104,7 @@ docker-compose ps
 ```
 
 ### Infrastructure Diagnostics
+
 ```bash
 # Database health and performance
 ./scripts/database-diagnostics.sh
@@ -107,6 +119,7 @@ docker-compose ps
 ## Quick Fixes
 
 ### Restart Services
+
 ```bash
 # Restart specific agent
 docker-compose restart agent-name
@@ -119,6 +132,7 @@ docker-compose down && docker-compose up -d
 ```
 
 ### Clear Caches
+
 ```bash
 # Clear application caches
 curl -X POST -H "X-API-Key: $API_KEY" \
@@ -132,6 +146,7 @@ docker system prune -f
 ```
 
 ### Reset Connections
+
 ```bash
 # Reset database connections
 docker exec postgres-reddit-watcher psql -U postgres -c "
@@ -146,18 +161,21 @@ docker exec postgres-reddit-watcher psql -U postgres -c "
 ## Escalation Criteria
 
 ### Immediate Escalation (P1)
+
 - Complete system failure (no agents responding)
 - Data corruption or loss
 - Security breach indicators
 - Critical business impact
 
 ### Standard Escalation (P2)
+
 - Multiple agent failures
 - Significant performance degradation
 - External API complete failure
 - Database connectivity issues
 
 ### Monitor and Fix (P3)
+
 - Single agent intermittent issues
 - Minor performance degradation
 - Non-critical feature failures
@@ -166,6 +184,7 @@ docker exec postgres-reddit-watcher psql -U postgres -c "
 ## Log Analysis
 
 ### Application Logs
+
 ```bash
 # Recent errors across all services
 docker-compose logs --since=1h | grep -i "error\|exception\|fail"
@@ -178,6 +197,7 @@ docker-compose logs | grep "ERROR\|WARN"
 ```
 
 ### System Logs
+
 ```bash
 # System journal
 journalctl -u docker --since="1 hour ago"
@@ -190,6 +210,7 @@ dmesg | tail -50
 ```
 
 ### Performance Logs
+
 ```bash
 # Check for out-of-memory events
 dmesg | grep -i "killed process\|out of memory"
@@ -204,6 +225,7 @@ netstat -i
 ## Monitoring and Metrics
 
 ### Key Metrics to Monitor
+
 - **Response Times**: API endpoint response times
 - **Error Rates**: 4xx and 5xx error percentages
 - **Throughput**: Requests per second
@@ -211,11 +233,13 @@ netstat -i
 - **External API Health**: Reddit/Gemini API status
 
 ### Grafana Dashboards
-- **System Overview**: https://grafana.company.com/d/reddit-watcher-overview
-- **Agent Performance**: https://grafana.company.com/d/reddit-watcher-agents
-- **Infrastructure**: https://grafana.company.com/d/reddit-watcher-infra
+
+- **System Overview**: <https://grafana.company.com/d/reddit-watcher-overview>
+- **Agent Performance**: <https://grafana.company.com/d/reddit-watcher-agents>
+- **Infrastructure**: <https://grafana.company.com/d/reddit-watcher-infra>
 
 ### Prometheus Queries
+
 ```bash
 # High error rate
 rate(http_requests_total{status=~"5.."}[5m]) > 0.01
@@ -232,12 +256,14 @@ histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
 ### Problem: Agents Not Registering in Service Discovery
 
 **Symptoms:**
+
 ```bash
 curl -s https://api.company.com/coordinator/discover | jq '.agents'
 # Returns empty or missing agents
 ```
 
 **Diagnosis:**
+
 ```bash
 # Check Redis connectivity
 docker exec redis-reddit-watcher redis-cli ping
@@ -250,6 +276,7 @@ docker exec redis-reddit-watcher redis-cli keys "agent:*"
 ```
 
 **Solution:**
+
 ```bash
 # Restart Redis
 docker-compose restart redis
@@ -264,11 +291,13 @@ curl -s https://api.company.com/coordinator/discover | jq '.agents'
 ### Problem: High Memory Usage
 
 **Symptoms:**
+
 - System becoming slow
 - Out of memory errors
 - High swap usage
 
 **Diagnosis:**
+
 ```bash
 # Check memory usage by container
 docker stats --no-stream
@@ -281,6 +310,7 @@ free -h
 ```
 
 **Solution:**
+
 ```bash
 # Clear application caches
 curl -X POST -H "X-API-Key: $API_KEY" \
@@ -296,11 +326,13 @@ docker-compose restart summarise-agent
 ### Problem: Database Connection Pool Exhaustion
 
 **Symptoms:**
+
 - "Too many connections" errors
 - Database timeout errors
 - Long response times
 
 **Diagnosis:**
+
 ```bash
 # Check active connections
 docker exec postgres-reddit-watcher psql -U postgres -c "
@@ -312,6 +344,7 @@ grep -r "pool_size\|max_overflow" config/
 ```
 
 **Solution:**
+
 ```bash
 # Kill idle connections
 docker exec postgres-reddit-watcher psql -U postgres -c "
@@ -326,18 +359,21 @@ docker-compose restart
 ## Getting Help
 
 ### Internal Resources
+
 - **Documentation**: This troubleshooting guide
 - **Runbooks**: [Operational runbooks](../runbooks/)
 - **Team Chat**: #reddit-watcher-support
 - **On-Call**: +1-555-ONCALL
 
 ### External Resources
-- **Docker Issues**: https://docs.docker.com/troubleshoot/
-- **PostgreSQL Issues**: https://www.postgresql.org/docs/troubleshooting/
-- **Redis Issues**: https://redis.io/docs/management/admin/
-- **FastAPI Issues**: https://fastapi.tiangolo.com/tutorial/debugging/
+
+- **Docker Issues**: <https://docs.docker.com/troubleshoot/>
+- **PostgreSQL Issues**: <https://www.postgresql.org/docs/troubleshooting/>
+- **Redis Issues**: <https://redis.io/docs/management/admin/>
+- **FastAPI Issues**: <https://fastapi.tiangolo.com/tutorial/debugging/>
 
 ### Escalation Process
+
 1. **Try quick fixes** from this guide
 2. **Check relevant troubleshooting guide** for specific issue
 3. **Escalate to on-call** if unresolved in 30 minutes

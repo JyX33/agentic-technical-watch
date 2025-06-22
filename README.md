@@ -59,7 +59,7 @@ docker-compose up -d redis postgres
 
 ```bash
 # Run the test agent
-uv run python test_agent_cli.py
+uv run python tests/cli/test_agent_cli.py
 
 # Or start an interactive agent server
 uv run python -m reddit_watcher.agents.test_agent
