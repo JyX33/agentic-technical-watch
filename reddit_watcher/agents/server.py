@@ -306,6 +306,37 @@ class A2AAgentServer:
         # A2A protocol endpoints (mounted by A2A FastAPI app)
         app.mount("/a2a", a2a_app)
 
+        # Direct skill invocation endpoints for testing
+        @app.post("/skills/{skill_name}")
+        async def invoke_skill(skill_name: str, request: dict):
+            """Direct skill invocation endpoint for testing."""
+            try:
+                parameters = request.get("parameters", {})
+                result = await self.agent.execute_skill(skill_name, parameters)
+                return JSONResponse(content=result)
+            except ValueError as e:
+                raise HTTPException(status_code=404, detail=str(e)) from e
+            except Exception as e:
+                self.logger.error(f"Error executing skill {skill_name}: {e}")
+                raise HTTPException(
+                    status_code=500, detail=f"Skill execution failed: {str(e)}"
+                ) from e
+
+        # List available skills endpoint
+        @app.get("/skills")
+        async def list_skills():
+            """List all available skills for this agent."""
+            try:
+                skills = self.agent.get_skills()
+                return JSONResponse(
+                    content={"skills": [skill.model_dump() for skill in skills]}
+                )
+            except Exception as e:
+                self.logger.error(f"Error listing skills: {e}")
+                raise HTTPException(
+                    status_code=500, detail="Failed to list skills"
+                ) from e
+
         self.app = app
         return app
 

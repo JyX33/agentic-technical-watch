@@ -647,3 +647,16 @@ class RetrievalAgent(BaseA2AAgent):
 
         base_health["retrieval_specific"] = retrieval_health
         return base_health
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    from .server import A2AAgentServer
+
+    async def main():
+        agent = RetrievalAgent()
+        server = A2AAgentServer(agent)
+        await server.start_server()
+
+    asyncio.run(main())
