@@ -134,7 +134,7 @@ class Settings(BaseSettings):
     # Gemini API Configuration
     gemini_api_key: str = Field(default="", description="Google Gemini API key")
     gemini_model_primary: str = Field(
-        default="gemini-2.5-flash-lite",
+        default="gemini-2.5-flash-lite-preview-06-17",
         description="Primary Gemini model for summarization",
     )
     gemini_model_fallback: str = Field(
@@ -179,6 +179,36 @@ class Settings(BaseSettings):
     relevance_threshold: float = Field(
         default=0.7,
         description="Minimum relevance score for content filtering",
+    )
+
+    # Security Configuration
+    rate_limit_requests_per_minute: int = Field(
+        default=60,
+        description="Maximum requests per minute per IP address",
+    )
+    rate_limit_requests_per_hour: int = Field(
+        default=1000,
+        description="Maximum requests per hour per IP address",
+    )
+    rate_limit_burst_limit: int = Field(
+        default=10,
+        description="Maximum burst requests in 10 seconds per IP",
+    )
+    rate_limit_whitelist: list[str] = Field(
+        default=["127.0.0.1", "::1"],
+        description="IP addresses exempt from rate limiting",
+    )
+    max_content_length: int = Field(
+        default=10 * 1024 * 1024,  # 10MB
+        description="Maximum request content length in bytes",
+    )
+    cors_allowed_origins: list[str] = Field(
+        default=["http://localhost:3000", "http://localhost:8080"],
+        description="CORS allowed origins",
+    )
+    security_headers_enabled: bool = Field(
+        default=True,
+        description="Enable security headers middleware",
     )
 
     # Circuit Breaker Configuration

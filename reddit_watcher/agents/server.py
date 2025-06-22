@@ -18,6 +18,7 @@ from reddit_watcher.a2a_protocol import EventQueue, RequestContext
 from reddit_watcher.agents.base import BaseA2AAgent, BaseA2AAgentExecutor
 from reddit_watcher.auth_middleware import AuthMiddleware
 from reddit_watcher.config import Settings
+from reddit_watcher.security_middleware import create_security_middleware_stack
 from reddit_watcher.shutdown import get_shutdown_manager, setup_graceful_shutdown
 
 logger = logging.getLogger(__name__)
@@ -252,13 +253,31 @@ class A2AAgentServer:
             lifespan=self.lifespan,
         )
 
-        # CORS middleware
+        # Security middleware stack (add in reverse order due to FastAPI middleware stacking)
+        from reddit_watcher.security_middleware import (
+            SecurityAuditMiddleware,
+            InputValidationMiddleware, 
+            RateLimitingMiddleware,
+            SecurityHeadersMiddleware
+        )
+        
+        if self.config.security_headers_enabled:
+            app.add_middleware(SecurityHeadersMiddleware, config=self.config)
+            app.add_middleware(RateLimitingMiddleware, config=self.config)
+            app.add_middleware(InputValidationMiddleware, config=self.config)
+            app.add_middleware(SecurityAuditMiddleware, config=self.config)
+
+        # CORS middleware (more restrictive configuration)
+        allowed_origins = getattr(self.config, 'cors_allowed_origins', ["http://localhost:3000", "http://localhost:8080"])
+        if self.config.debug:
+            allowed_origins = ["*"]  # Allow all origins in debug mode only
+        
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=allowed_origins,
             allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
+            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allow_headers=["Content-Type", "Authorization", "X-API-Key"],
         )
 
         # Initialize task storage for A2A protocol
@@ -272,7 +291,7 @@ class A2AAgentServer:
                 agent_card = self.agent.generate_agent_card()
                 return JSONResponse(content=agent_card.model_dump())
             except Exception as e:
-                self.logger.error(f"Error generating agent card: {e}")
+                self.logger.error(f"Error generating agent card: {e}", exc_info=True)
                 raise HTTPException(
                     status_code=500, detail="Failed to generate agent card"
                 ) from e
