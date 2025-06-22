@@ -358,8 +358,8 @@ class TestRetrievalAgent:
             agent._min_request_interval = 0.1  # 100ms between requests
 
             start_time = datetime.now(UTC)
-            agent._ensure_rate_limit()
-            agent._ensure_rate_limit()  # Should sleep
+            await agent._ensure_rate_limit()
+            await agent._ensure_rate_limit()  # Should sleep
             end_time = datetime.now(UTC)
 
             # Should have taken at least the minimum interval

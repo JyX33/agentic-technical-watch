@@ -76,7 +76,7 @@ class RetrievalAgent(BaseA2AAgent):
             logger.error(f"Failed to initialize Reddit client: {e}")
             self._reddit_client = None
 
-    def _ensure_rate_limit(self) -> None:
+    async def _ensure_rate_limit(self) -> None:
         """Ensure we don't exceed Reddit API rate limits."""
         current_time = datetime.now(UTC)
         time_since_last = (current_time - self._last_request_time).total_seconds()
@@ -84,9 +84,7 @@ class RetrievalAgent(BaseA2AAgent):
         if time_since_last < self._min_request_interval:
             sleep_time = self._min_request_interval - time_since_last
             logger.debug(f"Rate limiting: sleeping for {sleep_time:.2f}s")
-            import time
-
-            time.sleep(sleep_time)
+            await asyncio.sleep(sleep_time)
 
         self._last_request_time = datetime.now(UTC)
 
@@ -216,7 +214,8 @@ class RetrievalAgent(BaseA2AAgent):
             }
 
         try:
-            # Execute Reddit API calls in thread to avoid blocking
+            # Ensure rate limiting before executing Reddit API calls in thread
+            await self._ensure_rate_limit()
             posts_data = await asyncio.to_thread(
                 self._search_posts_sync, topic, subreddit_name, limit, time_range
             )
@@ -249,7 +248,6 @@ class RetrievalAgent(BaseA2AAgent):
         self, topic: str, subreddit_name: str, limit: int, time_range: str
     ) -> list[dict]:
         """Search Reddit posts synchronously (for thread execution)."""
-        self._ensure_rate_limit()
 
         try:
             subreddit = self._reddit_client.subreddit(subreddit_name)
@@ -357,6 +355,7 @@ class RetrievalAgent(BaseA2AAgent):
             }
 
         try:
+            await self._ensure_rate_limit()
             comments_data = await asyncio.to_thread(
                 self._fetch_comments_sync, post_id, limit
             )
@@ -384,7 +383,6 @@ class RetrievalAgent(BaseA2AAgent):
 
     def _fetch_comments_sync(self, post_id: str, limit: int) -> list[dict]:
         """Fetch comments from a post synchronously."""
-        self._ensure_rate_limit()
 
         try:
             submission = self._reddit_client.submission(id=post_id)
@@ -479,6 +477,7 @@ class RetrievalAgent(BaseA2AAgent):
             }
 
         try:
+            await self._ensure_rate_limit()
             subreddits_data = await asyncio.to_thread(
                 self._search_subreddits_sync, topic, limit
             )
@@ -506,7 +505,6 @@ class RetrievalAgent(BaseA2AAgent):
 
     def _search_subreddits_sync(self, topic: str, limit: int) -> list[dict]:
         """Search for subreddits synchronously."""
-        self._ensure_rate_limit()
 
         try:
             subreddits_data = []
@@ -595,6 +593,7 @@ class RetrievalAgent(BaseA2AAgent):
             }
 
         try:
+            await self._ensure_rate_limit()
             subreddit_data = await asyncio.to_thread(
                 self._get_subreddit_info_sync, subreddit_name
             )
@@ -618,7 +617,6 @@ class RetrievalAgent(BaseA2AAgent):
 
     def _get_subreddit_info_sync(self, subreddit_name: str) -> dict:
         """Get subreddit information synchronously."""
-        self._ensure_rate_limit()
 
         try:
             subreddit = self._reddit_client.subreddit(subreddit_name)
