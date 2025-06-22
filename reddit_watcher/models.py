@@ -97,10 +97,10 @@ class Subreddit(Base):
 
     # Relationships
     posts: Mapped[list["RedditPost"]] = relationship(
-        "RedditPost", back_populates="subreddit"
+        "RedditPost", back_populates="subreddit_obj"
     )
     comments: Mapped[list["RedditComment"]] = relationship(
-        "RedditComment", back_populates="subreddit"
+        "RedditComment", back_populates="subreddit_obj"
     )
 
 
@@ -141,12 +141,14 @@ class RedditPost(Base):
     )
 
     # Relationships
-    subreddit: Mapped[Subreddit] = relationship("Subreddit", back_populates="posts")
+    subreddit_obj: Mapped[Subreddit | None] = relationship(
+        "Subreddit", back_populates="posts"
+    )
     comments: Mapped[list["RedditComment"]] = relationship(
-        "RedditComment", back_populates="post"
+        "RedditComment", back_populates="post", cascade="all, delete-orphan"
     )
     content_filters: Mapped[list["ContentFilter"]] = relationship(
-        "ContentFilter", back_populates="post"
+        "ContentFilter", back_populates="post", cascade="all, delete-orphan"
     )
 
 
@@ -186,12 +188,14 @@ class RedditComment(Base):
     post: Mapped[RedditPost | None] = relationship(
         "RedditPost", back_populates="comments"
     )
-    subreddit: Mapped[Subreddit] = relationship("Subreddit", back_populates="comments")
+    subreddit_obj: Mapped[Subreddit | None] = relationship(
+        "Subreddit", back_populates="comments"
+    )
     parent_comment: Mapped[Optional["RedditComment"]] = relationship(
         "RedditComment", remote_side=[id]
     )
     content_filters: Mapped[list["ContentFilter"]] = relationship(
-        "ContentFilter", back_populates="comment"
+        "ContentFilter", back_populates="comment", cascade="all, delete-orphan"
     )
 
 
