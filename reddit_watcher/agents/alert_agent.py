@@ -1,6 +1,7 @@
 # ABOUTME: AlertAgent for multi-channel notifications via Slack webhooks and SMTP email
 # ABOUTME: Implements A2A skills for sending alerts with rich formatting, deduplication, and delivery tracking
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -52,6 +53,62 @@ class AlertAgent(BaseA2AAgent):
 
         # Delivery tracking for deduplication
         self._delivery_hashes: set[str] = set()
+
+        # HTTP session for webhook requests
+        self._http_session: aiohttp.ClientSession | None = None
+
+    async def _ensure_http_session(self) -> aiohttp.ClientSession:
+        """Ensure HTTP session is initialized for webhook requests."""
+        if not self._http_session or self._http_session.closed:
+            timeout = aiohttp.ClientTimeout(total=30)
+            connector = aiohttp.TCPConnector(
+                limit=10,  # Total connection pool size
+                limit_per_host=5,  # Connections per host
+                ttl_dns_cache=300,  # DNS cache TTL in seconds
+                use_dns_cache=True,
+                keepalive_timeout=30,  # Keep-alive timeout
+                enable_cleanup_closed=True,
+            )
+            self._http_session = aiohttp.ClientSession(
+                timeout=timeout,
+                connector=connector,
+                raise_for_status=False,  # Handle status codes manually
+            )
+        return self._http_session
+
+    async def _cleanup_http_session(self) -> None:
+        """Cleanup HTTP session resources properly."""
+        if self._http_session and not self._http_session.closed:
+            await self._http_session.close()
+            # Wait for proper cleanup
+            await asyncio.sleep(0.1)
+        self._http_session = None
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self._ensure_http_session()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self._cleanup_http_session()
+
+    def __del__(self):
+        """Cleanup on deletion."""
+        if hasattr(self, "_http_session") and self._http_session:
+            if not self._http_session.closed:
+                # Use try/except for graceful cleanup during shutdown
+                try:
+                    import asyncio
+
+                    if asyncio.get_event_loop().is_running():
+                        asyncio.create_task(self._cleanup_http_session())
+                except RuntimeError:
+                    # Event loop is not running, can't clean up async resources
+                    logger.warning(
+                        "Could not cleanup HTTP session during deletion - event loop not running"
+                    )
+                    pass
 
     def get_skills(self) -> list[AgentSkill]:
         """Define the alert notification skills."""
@@ -131,30 +188,27 @@ class AlertAgent(BaseA2AAgent):
         # Format Slack message with rich formatting
         slack_payload = self._format_slack_message(message, title, priority, metadata)
 
-        # Send webhook request
+        # Send webhook request using managed session
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.settings.slack_webhook_url,
-                    json=slack_payload,
-                    timeout=aiohttp.ClientTimeout(total=30),
-                ) as response:
-                    if response.status == 200:
-                        # Track successful delivery
-                        self._delivery_hashes.add(dedup_hash)
-                        await self._track_delivery("slack", dedup_hash, "success")
+            session = await self._ensure_http_session()
+            async with session.post(
+                self.settings.slack_webhook_url,
+                json=slack_payload,
+            ) as response:
+                if response.status == 200:
+                    # Track successful delivery
+                    self._delivery_hashes.add(dedup_hash)
+                    await self._track_delivery("slack", dedup_hash, "success")
 
-                        return {
-                            "status": "success",
-                            "channel": "slack",
-                            "deduplication_hash": dedup_hash,
-                            "timestamp": datetime.now(UTC).isoformat(),
-                        }
-                    else:
-                        error_text = await response.text()
-                        raise Exception(
-                            f"Slack API error {response.status}: {error_text}"
-                        )
+                    return {
+                        "status": "success",
+                        "channel": "slack",
+                        "deduplication_hash": dedup_hash,
+                        "timestamp": datetime.now(UTC).isoformat(),
+                    }
+                else:
+                    error_text = await response.text()
+                    raise Exception(f"Slack API error {response.status}: {error_text}")
 
         except TimeoutError as e:
             raise Exception("Slack webhook request timed out") from e
@@ -231,18 +285,15 @@ class AlertAgent(BaseA2AAgent):
             slack_status = "not_configured"
             if self.settings.has_slack_webhook():
                 try:
-                    async with aiohttp.ClientSession() as session:
-                        # Send a test ping (empty payload)
-                        async with session.post(
-                            self.settings.slack_webhook_url,
-                            json={"text": ""},
-                            timeout=aiohttp.ClientTimeout(total=10),
-                        ) as response:
-                            slack_status = (
-                                "connected"
-                                if response.status in [200, 400]
-                                else "error"
-                            )
+                    session = await self._ensure_http_session()
+                    # Send a test ping (empty payload)
+                    async with session.post(
+                        self.settings.slack_webhook_url,
+                        json={"text": ""},
+                    ) as response:
+                        slack_status = (
+                            "connected" if response.status in [200, 400] else "error"
+                        )
                 except Exception:
                     slack_status = "connection_failed"
 
@@ -250,17 +301,8 @@ class AlertAgent(BaseA2AAgent):
             smtp_status = "not_configured"
             if self.settings.has_smtp_config():
                 try:
-                    # Test SMTP connection
-                    server = smtplib.SMTP(
-                        self.settings.smtp_server, self.settings.smtp_port
-                    )
-                    if self.settings.smtp_use_tls:
-                        server.starttls()
-                    server.login(
-                        self.settings.smtp_username, self.settings.smtp_password
-                    )
-                    server.quit()
-                    smtp_status = "connected"
+                    # Test SMTP connection asynchronously
+                    smtp_status = await asyncio.to_thread(self._test_smtp_connection)
                 except Exception:
                     smtp_status = "connection_failed"
 
@@ -430,7 +472,7 @@ Reddit Technical Watcher
     async def _send_smtp_email(
         self, recipients: list[str], subject: str, html_content: str, text_content: str
     ) -> None:
-        """Send email via SMTP server."""
+        """Send email via SMTP server with proper connection management."""
         # Create message
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -443,15 +485,72 @@ Reddit Technical Watcher
         msg.attach(text_part)
         msg.attach(html_part)
 
-        # Send email
-        server = smtplib.SMTP(self.settings.smtp_server, self.settings.smtp_port)
+        # Send email with proper connection management
         try:
+            # Run SMTP operations in thread to avoid blocking
+            await asyncio.to_thread(self._send_smtp_sync, msg, recipients)
+        except Exception as e:
+            logger.error(f"SMTP email sending failed: {e}")
+            raise
+
+    def _send_smtp_sync(self, msg: MIMEMultipart, recipients: list[str]) -> None:
+        """Send SMTP email synchronously with proper connection cleanup."""
+        server = None
+        try:
+            server = smtplib.SMTP(self.settings.smtp_server, self.settings.smtp_port)
+            server.set_debuglevel(0)  # Disable debug output
+
             if self.settings.smtp_use_tls:
                 server.starttls()
+
             server.login(self.settings.smtp_username, self.settings.smtp_password)
             server.send_message(msg)
+            logger.debug(f"Email sent successfully to {len(recipients)} recipients")
+        except smtplib.SMTPException as e:
+            logger.error(f"SMTP error: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error sending email: {e}")
+            raise
         finally:
-            server.quit()
+            if server:
+                try:
+                    server.quit()
+                except Exception as e:
+                    logger.warning(f"Error closing SMTP connection: {e}")
+                    # Try force close if quit fails
+                    try:
+                        server.close()
+                    except Exception:
+                        pass
+
+    def _test_smtp_connection(self) -> str:
+        """Test SMTP connection synchronously."""
+        server = None
+        try:
+            server = smtplib.SMTP(self.settings.smtp_server, self.settings.smtp_port)
+            server.set_debuglevel(0)  # Disable debug output
+
+            if self.settings.smtp_use_tls:
+                server.starttls()
+
+            server.login(self.settings.smtp_username, self.settings.smtp_password)
+            server.noop()  # Send a no-op command to test the connection
+            return "connected"
+        except smtplib.SMTPException:
+            return "connection_failed"
+        except Exception:
+            return "connection_failed"
+        finally:
+            if server:
+                try:
+                    server.quit()
+                except Exception:
+                    # Try force close if quit fails
+                    try:
+                        server.close()
+                    except Exception:
+                        pass
 
     def _generate_dedup_hash(
         self,

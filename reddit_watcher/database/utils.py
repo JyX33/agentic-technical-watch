@@ -30,17 +30,23 @@ _async_session_maker = None
 
 
 def get_database_engine():
-    """Get or create database engine."""
+    """Get or create database engine with connection pooling."""
     global _engine
     if _engine is None:
         settings = get_settings()
-        _engine = create_database_engine(settings.database_url)
-        logger.info("Database engine created")
+        _engine = create_database_engine(
+            settings.database_url,
+            pool_size=20,  # Number of connections to keep persistently
+            max_overflow=30,  # Additional connections beyond pool_size
+            pool_pre_ping=True,  # Validate connections before use
+            pool_recycle=3600,  # Recycle connections every hour
+        )
+        logger.info("Database engine created with connection pooling")
     return _engine
 
 
 def get_async_database_engine():
-    """Get or create async database engine."""
+    """Get or create async database engine with connection pooling."""
     global _async_engine
     if _async_engine is None:
         settings = get_settings()
@@ -51,11 +57,13 @@ def get_async_database_engine():
         _async_engine = create_async_engine(
             async_url,
             echo=False,
-            pool_size=10,
-            max_overflow=20,
-            pool_pre_ping=True,
+            pool_size=20,  # Number of connections to keep persistently
+            max_overflow=30,  # Additional connections beyond pool_size
+            pool_pre_ping=True,  # Validate connections before use
+            pool_recycle=3600,  # Recycle connections every hour
+            pool_timeout=30,  # Wait up to 30 seconds for a connection
         )
-        logger.info("Async database engine created")
+        logger.info("Async database engine created with connection pooling")
     return _async_engine
 
 
@@ -356,18 +364,67 @@ def cleanup_old_tasks(days_old: int = 30) -> int:
 
 
 def close_database_connections():
-    """Close all database connections."""
+    """Close all database connections and clean up connection pools."""
     global _engine, _async_engine, _session_maker, _async_session_maker
 
     if _engine:
-        _engine.dispose()
-        _engine = None
+        try:
+            _engine.dispose()
+            logger.info("Sync database engine disposed")
+        except Exception as e:
+            logger.error(f"Error disposing sync database engine: {e}")
+        finally:
+            _engine = None
 
     if _async_engine:
-        _async_engine.dispose()
-        _async_engine = None
+        try:
+            # For async engines, we need to dispose properly
+            import asyncio
+
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(_async_engine.dispose())
+                else:
+                    loop.run_until_complete(_async_engine.dispose())
+            except RuntimeError:
+                # No event loop, dispose synchronously if possible
+                pass
+            logger.info("Async database engine disposed")
+        except Exception as e:
+            logger.error(f"Error disposing async database engine: {e}")
+        finally:
+            _async_engine = None
 
     _session_maker = None
     _async_session_maker = None
 
-    logger.info("Database connections closed")
+    logger.info("Database connections closed and pools cleaned up")
+
+
+async def async_close_database_connections():
+    """Async version of database connection cleanup."""
+    global _engine, _async_engine, _session_maker, _async_session_maker
+
+    if _engine:
+        try:
+            _engine.dispose()
+            logger.info("Sync database engine disposed")
+        except Exception as e:
+            logger.error(f"Error disposing sync database engine: {e}")
+        finally:
+            _engine = None
+
+    if _async_engine:
+        try:
+            await _async_engine.dispose()
+            logger.info("Async database engine disposed")
+        except Exception as e:
+            logger.error(f"Error disposing async database engine: {e}")
+        finally:
+            _async_engine = None
+
+    _session_maker = None
+    _async_session_maker = None
+
+    logger.info("Database connections closed and pools cleaned up (async)")

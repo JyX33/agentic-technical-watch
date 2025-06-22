@@ -52,6 +52,19 @@ class BaseA2AAgent(ABC):
         self.settings = get_settings()
         self.logger = logging.getLogger(f"{__name__}.{agent_type}")
 
+    async def __aenter__(self):
+        """Async context manager entry. Override in subclasses for resource initialization."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit. Override in subclasses for resource cleanup."""
+        await self.cleanup_resources()
+
+    async def cleanup_resources(self):
+        """Cleanup any resources held by this agent. Override in subclasses."""
+        # Default implementation does nothing - subclasses should override
+        return
+
     @abstractmethod
     def get_skills(self) -> list[AgentSkill]:
         """
@@ -125,7 +138,7 @@ class BaseA2AAgent(ABC):
             description=self.description,
             version=self.version,
             provider=provider,
-            url=f"http://localhost:{self.settings.a2a_port}",
+            url=f"http://localhost:{self.settings.a2a_port}/a2a",
             defaultInputModes=["text/plain", "application/json"],
             defaultOutputModes=["application/json"],
             capabilities=capabilities,

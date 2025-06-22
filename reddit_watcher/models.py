@@ -645,15 +645,22 @@ class WorkflowExecution(Base):
 # Database utilities
 
 
-def create_database_engine(database_url: str):
-    """Create SQLAlchemy engine with optimized settings."""
+def create_database_engine(
+    database_url: str,
+    pool_size: int = 20,
+    max_overflow: int = 30,
+    pool_pre_ping: bool = True,
+    pool_recycle: int = 3600,
+    echo: bool = False,
+):
+    """Create SQLAlchemy engine with configurable connection pooling."""
     return create_engine(
         database_url,
-        echo=False,  # Set to True for SQL logging
-        pool_size=20,
-        max_overflow=30,
-        pool_pre_ping=True,
-        pool_recycle=3600,
+        echo=echo,  # Set to True for SQL logging
+        pool_size=pool_size,
+        max_overflow=max_overflow,
+        pool_pre_ping=pool_pre_ping,
+        pool_recycle=pool_recycle,
     )
 
 

@@ -4,61 +4,23 @@
 import asyncio
 import logging
 import signal
+import uuid
 from contextlib import asynccontextmanager
 from typing import Any
 
 import redis.asyncio as redis
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from reddit_watcher.a2a_protocol import EventQueue, RequestContext
 from reddit_watcher.agents.base import BaseA2AAgent, BaseA2AAgentExecutor
+from reddit_watcher.auth_middleware import AuthMiddleware
 from reddit_watcher.config import get_settings
+from reddit_watcher.shutdown import get_shutdown_manager, setup_graceful_shutdown
 
 logger = logging.getLogger(__name__)
-
-
-# Custom A2A FastAPI application implementation
-class A2AFastAPIApplication:
-    """FastAPI application wrapper for A2A agents."""
-
-    def __init__(self, executor):
-        self.executor = executor
-        self.app = FastAPI(
-            title="A2A Agent Server", description="Agent-to-Agent protocol server"
-        )
-        self._setup_routes()
-
-    def _setup_routes(self):
-        """Set up A2A protocol routes."""
-
-        @self.app.post("/message")
-        async def handle_message(request: dict):
-            """Handle A2A protocol messages."""
-            context = RequestContext(
-                message=request.get("message", ""), metadata=request.get("metadata", {})
-            )
-            event_queue = EventQueue()
-
-            await self.executor.execute(context, event_queue)
-
-            # Return events as response
-            events = event_queue.get_events()
-            return {"events": events, "status": "success"}
-
-        @self.app.post("/stream")
-        async def handle_stream(request: dict):
-            """Handle streaming A2A protocol messages."""
-            # Placeholder for streaming support
-            return {"status": "streaming_not_implemented"}
-
-        @self.app.get("/task/{task_id}")
-        async def get_task_status(task_id: str):
-            """Get task status."""
-            # Placeholder for task status tracking
-            return {"task_id": task_id, "status": "unknown"}
 
 
 class A2AServiceDiscovery:
@@ -189,9 +151,15 @@ class A2AServiceDiscovery:
             self.logger.error(f"Failed to update health for agent {agent_type}: {e}")
 
     async def cleanup(self) -> None:
-        """Clean up Redis connections."""
+        """Clean up Redis connections properly."""
         if self.redis_client:
-            await self.redis_client.aclose()
+            try:
+                await self.redis_client.aclose()
+                logger.info("Redis connection closed")
+            except Exception as e:
+                logger.error(f"Error closing Redis connection: {e}")
+            finally:
+                self.redis_client = None
 
 
 class A2AAgentServer:
@@ -212,9 +180,43 @@ class A2AAgentServer:
         self.agent = agent
         self.settings = get_settings()
         self.discovery = A2AServiceDiscovery()
+        self.auth = AuthMiddleware()
         self.a2a_app: FastAPI | None = None
         self.app: FastAPI | None = None
         self.logger = logging.getLogger(f"{__name__}.{agent.agent_type}")
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self.discovery.initialize()
+        await self.discovery.register_agent(self.agent)
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.discovery.deregister_agent(self.agent.agent_type)
+        await self.discovery.cleanup()
+
+    def __del__(self):
+        """Cleanup on deletion."""
+        try:
+            import asyncio
+
+            if asyncio.get_event_loop().is_running():
+                asyncio.create_task(self._async_cleanup())
+        except RuntimeError:
+            # Event loop is not running, can't clean up async resources
+            self.logger.warning(
+                "Could not cleanup server resources during deletion - event loop not running"
+            )
+            pass
+
+    async def _async_cleanup(self):
+        """Async cleanup method."""
+        try:
+            await self.discovery.deregister_agent(self.agent.agent_type)
+            await self.discovery.cleanup()
+        except Exception as e:
+            self.logger.error(f"Error during async cleanup: {e}")
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI):
@@ -258,10 +260,8 @@ class A2AAgentServer:
             allow_headers=["*"],
         )
 
-        # Create A2A executor and app
-        executor = BaseA2AAgentExecutor(self.agent)
-        a2a_fastapi_app = A2AFastAPIApplication(executor)
-        a2a_app = a2a_fastapi_app.app
+        # Initialize task storage for A2A protocol
+        self._tasks = {}
 
         # Agent Card endpoint for service discovery
         @app.get("/.well-known/agent.json")
@@ -303,12 +303,50 @@ class A2AAgentServer:
                     status_code=500, detail="Service discovery failed"
                 ) from e
 
-        # A2A protocol endpoints (mounted by A2A FastAPI app)
-        app.mount("/a2a", a2a_app)
+        # A2A protocol JSON-RPC endpoints (main endpoints for A2A communication)
+        @app.post("/a2a")
+        async def a2a_jsonrpc_endpoint(request: dict):
+            """Main A2A JSON-RPC 2.0 endpoint for agent communication."""
+            try:
+                # Validate JSON-RPC request
+                if not self._is_valid_jsonrpc_request(request):
+                    return self._jsonrpc_error(
+                        -32600, "Invalid Request", request.get("id")
+                    )
+
+                method = request.get("method")
+                params = request.get("params", {})
+                request_id = request.get("id")
+
+                # Route to appropriate handler
+                if method == "message/send":
+                    return await self._handle_message_send(params, request_id)
+                elif method == "message/stream":
+                    return await self._handle_message_stream(params, request_id)
+                elif method == "tasks/get":
+                    return await self._handle_tasks_get(params, request_id)
+                elif method == "tasks/cancel":
+                    return await self._handle_tasks_cancel(params, request_id)
+                elif method == "tasks/pushNotificationConfig/set":
+                    return await self._handle_push_notification_set(params, request_id)
+                elif method == "tasks/pushNotificationConfig/get":
+                    return await self._handle_push_notification_get(params, request_id)
+                elif method == "tasks/resubscribe":
+                    return await self._handle_tasks_resubscribe(params, request_id)
+                else:
+                    return self._jsonrpc_error(-32601, "Method not found", request_id)
+
+            except Exception as e:
+                self.logger.error(f"A2A JSON-RPC error: {e}")
+                return self._jsonrpc_error(
+                    -32603, f"Internal error: {str(e)}", request.get("id")
+                )
 
         # Direct skill invocation endpoints for testing
         @app.post("/skills/{skill_name}")
-        async def invoke_skill(skill_name: str, request: dict):
+        async def invoke_skill(
+            skill_name: str, request: dict, user: str = Depends(self.auth.verify_token)
+        ):
             """Direct skill invocation endpoint for testing."""
             try:
                 parameters = request.get("parameters", {})
@@ -340,9 +378,177 @@ class A2AAgentServer:
         self.app = app
         return app
 
-    async def start_server(self) -> None:
-        """Start the A2A agent server."""
+    def _is_valid_jsonrpc_request(self, request: dict) -> bool:
+        """Validate JSON-RPC 2.0 request format."""
+        return (
+            isinstance(request, dict)
+            and request.get("jsonrpc") == "2.0"
+            and "method" in request
+            and isinstance(request.get("method"), str)
+        )
+
+    def _jsonrpc_response(self, result: Any, request_id: Any) -> dict:
+        """Create JSON-RPC 2.0 success response."""
+        return {"jsonrpc": "2.0", "result": result, "id": request_id}
+
+    def _jsonrpc_error(
+        self, code: int, message: str, request_id: Any, data: Any = None
+    ) -> dict:
+        """Create JSON-RPC 2.0 error response."""
+        error = {"code": code, "message": message}
+        if data is not None:
+            error["data"] = data
+        return {"jsonrpc": "2.0", "error": error, "id": request_id}
+
+    async def _handle_message_send(self, params: dict, request_id: Any) -> dict:
+        """Handle message/send JSON-RPC method."""
         try:
+            import uuid
+            from datetime import datetime
+
+            # Extract message from params
+            message = params.get("message", {})
+            metadata = params.get("metadata", {})
+
+            # Create a task
+            task_id = str(uuid.uuid4())
+            context_id = str(uuid.uuid4())
+
+            # Process the message with the executor
+            executor = BaseA2AAgentExecutor(self.agent)
+            context = RequestContext(
+                message=message.get("parts", [{}])[0].get("text", ""), metadata=metadata
+            )
+            event_queue = EventQueue()
+
+            await executor.execute(context, event_queue)
+            events = event_queue.get_events()
+
+            # Create task object according to A2A spec
+            task = {
+                "id": task_id,
+                "contextId": context_id,
+                "status": {
+                    "state": "completed",
+                    "message": {
+                        "role": "agent",
+                        "parts": [{"kind": "text", "text": str(events)}]
+                        if events
+                        else [{"kind": "text", "text": "Task completed"}],
+                        "messageId": str(uuid.uuid4()),
+                        "taskId": task_id,
+                        "contextId": context_id,
+                    },
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                },
+                "artifacts": [],
+                "history": [message] if message else [],
+                "metadata": metadata,
+                "kind": "task",
+            }
+
+            # Store task (in-memory for now)
+            if not hasattr(self, "_tasks"):
+                self._tasks = {}
+            self._tasks[task_id] = task
+
+            return self._jsonrpc_response(task, request_id)
+
+        except Exception as e:
+            self.logger.error(f"Error handling message/send: {e}")
+            return self._jsonrpc_error(-32603, f"Internal error: {str(e)}", request_id)
+
+    async def _handle_message_stream(self, params: dict, request_id: Any) -> dict:
+        """Handle message/stream JSON-RPC method."""
+        # For now, return not implemented
+        return self._jsonrpc_error(-32004, "Streaming not implemented yet", request_id)
+
+    async def _handle_tasks_get(self, params: dict, request_id: Any) -> dict:
+        """Handle tasks/get JSON-RPC method."""
+        try:
+            task_id = params.get("id")
+            if not task_id:
+                return self._jsonrpc_error(
+                    -32602, "Invalid params: task id required", request_id
+                )
+
+            if not hasattr(self, "_tasks"):
+                self._tasks = {}
+
+            task = self._tasks.get(task_id)
+            if not task:
+                return self._jsonrpc_error(-32001, "Task not found", request_id)
+
+            return self._jsonrpc_response(task, request_id)
+
+        except Exception as e:
+            self.logger.error(f"Error handling tasks/get: {e}")
+            return self._jsonrpc_error(-32603, f"Internal error: {str(e)}", request_id)
+
+    async def _handle_tasks_cancel(self, params: dict, request_id: Any) -> dict:
+        """Handle tasks/cancel JSON-RPC method."""
+        try:
+            task_id = params.get("id")
+            if not task_id:
+                return self._jsonrpc_error(
+                    -32602, "Invalid params: task id required", request_id
+                )
+
+            if not hasattr(self, "_tasks"):
+                self._tasks = {}
+
+            task = self._tasks.get(task_id)
+            if not task:
+                return self._jsonrpc_error(-32001, "Task not found", request_id)
+
+            # Update task status to cancelled
+            task["status"]["state"] = "canceled"
+            task["status"]["message"] = {
+                "role": "agent",
+                "parts": [{"kind": "text", "text": "Task was cancelled"}],
+                "messageId": str(uuid.uuid4()),
+                "taskId": task_id,
+                "contextId": task["contextId"],
+            }
+
+            return self._jsonrpc_response(task, request_id)
+
+        except Exception as e:
+            self.logger.error(f"Error handling tasks/cancel: {e}")
+            return self._jsonrpc_error(-32603, f"Internal error: {str(e)}", request_id)
+
+    async def _handle_push_notification_set(
+        self, params: dict, request_id: Any
+    ) -> dict:
+        """Handle tasks/pushNotificationConfig/set JSON-RPC method."""
+        return self._jsonrpc_error(
+            -32003, "Push Notification is not supported", request_id
+        )
+
+    async def _handle_push_notification_get(
+        self, params: dict, request_id: Any
+    ) -> dict:
+        """Handle tasks/pushNotificationConfig/get JSON-RPC method."""
+        return self._jsonrpc_error(
+            -32003, "Push Notification is not supported", request_id
+        )
+
+    async def _handle_tasks_resubscribe(self, params: dict, request_id: Any) -> dict:
+        """Handle tasks/resubscribe JSON-RPC method."""
+        return self._jsonrpc_error(
+            -32004, "Streaming resubscription not supported", request_id
+        )
+
+    async def start_server(self) -> None:
+        """Start the A2A agent server with graceful shutdown."""
+        try:
+            # Setup graceful shutdown
+            setup_graceful_shutdown()
+            shutdown_manager = get_shutdown_manager()
+
+            # Register server cleanup handlers
+            shutdown_manager.add_async_shutdown_handler(self._async_cleanup)
+
             app = self.create_app()
 
             config = uvicorn.Config(
@@ -359,6 +565,7 @@ class A2AAgentServer:
             def signal_handler(signum, frame):
                 self.logger.info(f"Received signal {signum}, shutting down...")
                 server.should_exit = True
+                shutdown_manager.initiate_shutdown()
 
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)

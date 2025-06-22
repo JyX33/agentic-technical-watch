@@ -65,6 +65,9 @@ class Settings(BaseSettings):
         default="",
         description="Bearer token for A2A authentication",
     )
+    jwt_secret: str = Field(
+        default="", description="JWT secret key for token authentication"
+    )
 
     # A2A Agent Endpoints
     retrieval_agent_url: str = Field(

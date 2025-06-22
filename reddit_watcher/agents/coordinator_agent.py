@@ -62,13 +62,31 @@ class CoordinatorAgent(BaseA2AAgent):
         """Ensure HTTP session is initialized for A2A communication."""
         if not self._http_session or self._http_session.closed:
             timeout = aiohttp.ClientTimeout(total=self._timeout)
-            self._http_session = aiohttp.ClientSession(timeout=timeout)
+            connector = aiohttp.TCPConnector(
+                limit=100,  # Total connection pool size
+                limit_per_host=30,  # Connections per host
+                ttl_dns_cache=300,  # DNS cache TTL in seconds
+                use_dns_cache=True,
+                keepalive_timeout=30,  # Keep-alive timeout
+                enable_cleanup_closed=True,
+            )
+            self._http_session = aiohttp.ClientSession(
+                timeout=timeout,
+                connector=connector,
+                raise_for_status=False,  # Handle status codes manually
+            )
         return self._http_session
 
     async def _cleanup_http_session(self) -> None:
-        """Cleanup HTTP session resources."""
+        """Cleanup HTTP session resources properly."""
         if self._http_session and not self._http_session.closed:
-            await self._http_session.close()
+            try:
+                await self._http_session.close()
+                # Wait for proper cleanup
+                await asyncio.sleep(0.1)
+            except Exception as e:
+                logger.warning(f"Error closing HTTP session: {e}")
+        self._http_session = None
 
     def get_skills(self) -> list[AgentSkill]:
         """Return list of skills this agent can perform."""
@@ -661,28 +679,65 @@ class CoordinatorAgent(BaseA2AAgent):
         )
 
         try:
-            # Send summary alert if there are relevant posts
-            alert_params = {
-                "skill": "send_summary_alert",
-                "parameters": {
-                    "relevant_posts": relevant_posts,
-                    "summaries_created": summarise_result.get("summaries_created", 0)
-                    if summarise_result
-                    else 0,
-                    "monitoring_topics": self.settings.reddit_topics,
-                    "timestamp": datetime.now(UTC).isoformat(),
-                },
+            # Prepare summary alert message
+            summaries_created = (
+                summarise_result.get("summaries_created", 0) if summarise_result else 0
+            )
+            alert_message = f"Reddit monitoring cycle completed:\n• Found {relevant_posts} relevant posts\n• Created {summaries_created} summaries\n• Topics monitored: {', '.join(self.settings.reddit_topics)}"
+
+            alert_title = (
+                f"Reddit Monitoring Alert - {relevant_posts} relevant posts found"
+            )
+
+            alert_metadata = {
+                "relevant_posts": relevant_posts,
+                "summaries_created": summaries_created,
+                "monitoring_topics": self.settings.reddit_topics,
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
-            result = await self._delegate_to_agent("alert", alert_params, workflow_id)
+            alerts_sent = 0
 
-            if result["status"] == "success":
-                await self._log_workflow_event(
-                    workflow_id, "alert_completed", {"alerts_sent": 1}
+            # Send Slack alert if configured
+            if self.settings.has_slack_webhook():
+                slack_params = {
+                    "skill": "sendSlack",
+                    "parameters": {
+                        "message": alert_message,
+                        "title": alert_title,
+                        "priority": "medium",
+                        "metadata": alert_metadata,
+                    },
+                }
+
+                slack_result = await self._delegate_to_agent(
+                    "alert", slack_params, workflow_id
                 )
-                return {"status": "success", "result": {"alerts_sent": 1}}
-            else:
-                return {"status": "error", "error": result.get("error")}
+                if slack_result["status"] == "success":
+                    alerts_sent += 1
+
+            # Send email alert if configured
+            if self.settings.has_smtp_config() and self.settings.email_recipients:
+                email_params = {
+                    "skill": "sendEmail",
+                    "parameters": {
+                        "message": alert_message,
+                        "subject": alert_title,
+                        "priority": "medium",
+                        "metadata": alert_metadata,
+                    },
+                }
+
+                email_result = await self._delegate_to_agent(
+                    "alert", email_params, workflow_id
+                )
+                if email_result["status"] == "success":
+                    alerts_sent += 1
+
+            await self._log_workflow_event(
+                workflow_id, "alert_completed", {"alerts_sent": alerts_sent}
+            )
+            return {"status": "success", "result": {"alerts_sent": alerts_sent}}
 
         except Exception as e:
             await self._log_workflow_event(
@@ -1058,6 +1113,21 @@ class CoordinatorAgent(BaseA2AAgent):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self._cleanup_http_session()
+
+    def __del__(self):
+        """Cleanup on deletion."""
+        if hasattr(self, "_http_session") and self._http_session:
+            if not self._http_session.closed:
+                # Use try/except for graceful cleanup during shutdown
+                try:
+                    if asyncio.get_event_loop().is_running():
+                        asyncio.create_task(self._cleanup_http_session())
+                except RuntimeError:
+                    # Event loop is not running, can't clean up async resources
+                    logger.warning(
+                        "Could not cleanup HTTP session during deletion - event loop not running"
+                    )
+                    pass
 
 
 if __name__ == "__main__":
