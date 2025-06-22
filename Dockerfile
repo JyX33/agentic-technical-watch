@@ -26,10 +26,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM python:3.12-slim AS runtime
 
-# Install system dependencies
+# Install system dependencies including curl for health checks
 RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
