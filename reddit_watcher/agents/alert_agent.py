@@ -18,6 +18,7 @@ from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import (
     BaseA2AAgent,
 )
+from reddit_watcher.config import Settings
 from reddit_watcher.models import AlertStatus
 
 logger = logging.getLogger(__name__)
@@ -34,8 +35,9 @@ class AlertAgent(BaseA2AAgent):
     - Configurable channel routing and formatting
     """
 
-    def __init__(self):
+    def __init__(self, config: Settings):
         super().__init__(
+            config=config,
             agent_type="alert",
             name="Alert Notification Agent",
             description="Delivers notifications via Slack webhooks and SMTP email with rich formatting",
@@ -172,7 +174,7 @@ class AlertAgent(BaseA2AAgent):
         priority = parameters.get("priority", "medium").lower()
         metadata = parameters.get("metadata", {})
 
-        if not self.settings.has_slack_webhook():
+        if not self.config.has_slack_webhook():
             raise ValueError("Slack webhook not configured")
 
         # Generate deduplication hash
@@ -192,7 +194,7 @@ class AlertAgent(BaseA2AAgent):
         try:
             session = await self._ensure_http_session()
             async with session.post(
-                self.settings.slack_webhook_url,
+                self.config.slack_webhook_url,
                 json=slack_payload,
             ) as response:
                 if response.status == 200:
@@ -219,12 +221,12 @@ class AlertAgent(BaseA2AAgent):
         """Send alert via SMTP email with HTML/text templates."""
         message = parameters.get("message", "")
         subject = parameters.get("subject", "Reddit Alert")
-        recipients = parameters.get("recipients", self.settings.email_recipients)
+        recipients = parameters.get("recipients", self.config.email_recipients)
         priority = parameters.get("priority", "medium").lower()
         html_template = parameters.get("html_template", "default")
         metadata = parameters.get("metadata", {})
 
-        if not self.settings.has_smtp_config():
+        if not self.config.has_smtp_config():
             raise ValueError("SMTP configuration not available")
 
         if not recipients:
@@ -274,21 +276,21 @@ class AlertAgent(BaseA2AAgent):
         health_status = self.get_common_health_status()
         health_status.update(
             {
-                "slack_configured": self.settings.has_slack_webhook(),
-                "smtp_configured": self.settings.has_smtp_config(),
-                "email_recipients": len(self.settings.email_recipients),
+                "slack_configured": self.config.has_slack_webhook(),
+                "smtp_configured": self.config.has_smtp_config(),
+                "email_recipients": len(self.config.email_recipients),
             }
         )
 
         if check_connectivity:
             # Test Slack connectivity
             slack_status = "not_configured"
-            if self.settings.has_slack_webhook():
+            if self.config.has_slack_webhook():
                 try:
                     session = await self._ensure_http_session()
                     # Send a test ping (empty payload)
                     async with session.post(
-                        self.settings.slack_webhook_url,
+                        self.config.slack_webhook_url,
                         json={"text": ""},
                     ) as response:
                         slack_status = (
@@ -299,7 +301,7 @@ class AlertAgent(BaseA2AAgent):
 
             # Test SMTP connectivity
             smtp_status = "not_configured"
-            if self.settings.has_smtp_config():
+            if self.config.has_smtp_config():
                 try:
                     # Test SMTP connection asynchronously
                     smtp_status = await asyncio.to_thread(self._test_smtp_connection)
@@ -476,7 +478,7 @@ Reddit Technical Watcher
         # Create message
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = self.settings.smtp_username
+        msg["From"] = self.config.smtp_username
         msg["To"] = ", ".join(recipients)
 
         # Add text and HTML parts
@@ -497,13 +499,13 @@ Reddit Technical Watcher
         """Send SMTP email synchronously with proper connection cleanup."""
         server = None
         try:
-            server = smtplib.SMTP(self.settings.smtp_server, self.settings.smtp_port)
+            server = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
             server.set_debuglevel(0)  # Disable debug output
 
-            if self.settings.smtp_use_tls:
+            if self.config.smtp_use_tls:
                 server.starttls()
 
-            server.login(self.settings.smtp_username, self.settings.smtp_password)
+            server.login(self.config.smtp_username, self.config.smtp_password)
             server.send_message(msg)
             logger.debug(f"Email sent successfully to {len(recipients)} recipients")
         except smtplib.SMTPException as e:
@@ -528,13 +530,13 @@ Reddit Technical Watcher
         """Test SMTP connection synchronously."""
         server = None
         try:
-            server = smtplib.SMTP(self.settings.smtp_server, self.settings.smtp_port)
+            server = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
             server.set_debuglevel(0)  # Disable debug output
 
-            if self.settings.smtp_use_tls:
+            if self.config.smtp_use_tls:
                 server.starttls()
 
-            server.login(self.settings.smtp_username, self.settings.smtp_password)
+            server.login(self.config.smtp_username, self.config.smtp_password)
             server.noop()  # Send a no-op command to test the connection
             return "connected"
         except smtplib.SMTPException:
@@ -603,10 +605,10 @@ Reddit Technical Watcher
         status.update(
             {
                 "notification_channels": {
-                    "slack": self.settings.has_slack_webhook(),
-                    "email": self.settings.has_smtp_config(),
+                    "slack": self.config.has_slack_webhook(),
+                    "email": self.config.has_smtp_config(),
                 },
-                "email_recipients_count": len(self.settings.email_recipients),
+                "email_recipients_count": len(self.config.email_recipients),
                 "delivery_cache_size": len(self._delivery_hashes),
             }
         )

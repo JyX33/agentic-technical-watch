@@ -12,6 +12,7 @@ from praw.models import Comment, Submission, Subreddit
 
 from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import BaseA2AAgent
+from reddit_watcher.config import Settings
 from reddit_watcher.database.utils import get_db_session
 from reddit_watcher.models import RedditComment, RedditPost
 from reddit_watcher.models import Subreddit as SubredditModel
@@ -30,8 +31,9 @@ class RetrievalAgent(BaseA2AAgent):
     - Managing rate limits and error handling
     """
 
-    def __init__(self):
+    def __init__(self, config: Settings):
         super().__init__(
+            config=config,
             agent_type="retrieval",
             name="Reddit Retrieval Agent",
             description="Fetches Reddit posts, comments, and discovers subreddits using PRAW",
@@ -45,20 +47,20 @@ class RetrievalAgent(BaseA2AAgent):
         # Rate limiting
         self._last_request_time = datetime.now(UTC)
         self._min_request_interval = (
-            60 / self.settings.reddit_rate_limit
+            60 / self.config.reddit_rate_limit
         )  # seconds between requests
 
     def _initialize_reddit_client(self) -> None:
         """Initialize PRAW Reddit client with authentication."""
         try:
-            if not self.settings.has_reddit_credentials():
+            if not self.config.has_reddit_credentials():
                 logger.warning("Reddit credentials not configured")
                 return
 
             self._reddit_client = praw.Reddit(
-                client_id=self.settings.reddit_client_id,
-                client_secret=self.settings.reddit_client_secret,
-                user_agent=self.settings.reddit_user_agent,
+                client_id=self.config.reddit_client_id,
+                client_secret=self.config.reddit_client_secret,
+                user_agent=self.config.reddit_user_agent,
                 ratelimit_seconds=300,  # Wait up to 5 minutes for rate limits
                 timeout=30,
             )
@@ -160,8 +162,8 @@ class RetrievalAgent(BaseA2AAgent):
         # Check Reddit client status
         reddit_status = {
             "initialized": self._reddit_client is not None,
-            "credentials_configured": self.settings.has_reddit_credentials(),
-            "rate_limit": self.settings.reddit_rate_limit,
+            "credentials_configured": self.config.has_reddit_credentials(),
+            "rate_limit": self.config.reddit_rate_limit,
         }
 
         if self._reddit_client:
@@ -635,8 +637,8 @@ class RetrievalAgent(BaseA2AAgent):
 
         retrieval_health = {
             "reddit_client_initialized": self._reddit_client is not None,
-            "reddit_credentials": self.settings.has_reddit_credentials(),
-            "rate_limit_rpm": self.settings.reddit_rate_limit,
+            "reddit_credentials": self.config.has_reddit_credentials(),
+            "rate_limit_rpm": self.config.reddit_rate_limit,
             "min_request_interval": self._min_request_interval,
         }
 

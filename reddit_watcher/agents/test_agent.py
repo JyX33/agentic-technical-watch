@@ -7,6 +7,7 @@ from typing import Any
 from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import BaseA2AAgent
 from reddit_watcher.agents.server import run_agent_server
+from reddit_watcher.config import Settings, create_config
 
 
 class MockA2AAgent(BaseA2AAgent):
@@ -17,8 +18,9 @@ class MockA2AAgent(BaseA2AAgent):
     A2A protocol functionality and service discovery.
     """
 
-    def __init__(self):
+    def __init__(self, config: Settings):
         super().__init__(
+            config=config,
             agent_type="test",
             name="Test A2A Agent",
             description="Test agent for validating A2A protocol implementation",
@@ -97,9 +99,9 @@ class MockA2AAgent(BaseA2AAgent):
             "skill": "reddit_topics",
             "status": "success",
             "result": {
-                "topics": self.settings.reddit_topics,
-                "processing_interval": self.settings.processing_interval,
-                "relevance_threshold": self.settings.relevance_threshold,
+                "topics": self.config.reddit_topics,
+                "processing_interval": self.config.processing_interval,
+                "relevance_threshold": self.config.relevance_threshold,
             },
         }
 
@@ -126,14 +128,15 @@ def main():
 
     logging.basicConfig(level=logging.INFO)
 
-    agent = MockA2AAgent()
-    print(f"Starting {agent.name} on port {agent.settings.a2a_port}")
+    config = create_config()
+    agent = MockA2AAgent(config)
+    print(f"Starting {agent.name} on port {config.a2a_port}")
     print(
-        f"Agent Card will be available at: http://localhost:{agent.settings.a2a_port}/.well-known/agent.json"
+        f"Agent Card will be available at: http://localhost:{config.a2a_port}/.well-known/agent.json"
     )
-    print(f"Health check at: http://localhost:{agent.settings.a2a_port}/health")
+    print(f"Health check at: http://localhost:{config.a2a_port}/health")
 
-    run_agent_server(agent)
+    run_agent_server(agent, config)
 
 
 if __name__ == "__main__":

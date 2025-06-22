@@ -29,7 +29,7 @@ import sys
 from datetime import datetime
 
 from reddit_watcher.agents.filter_agent import FilterAgent
-from reddit_watcher.config import get_settings
+from reddit_watcher.config import create_config, get_settings
 
 # Configure logging
 logging.basicConfig(
@@ -393,7 +393,8 @@ async def run_interactive_tests():
     # Initialize agent
     print("\n=== Initializing FilterAgent ===")
     print("⏳ Loading semantic similarity model (this may take a moment)...")
-    agent = FilterAgent()
+    config = create_config()
+    agent = FilterAgent(config)
 
     # Run tests
     tests = [

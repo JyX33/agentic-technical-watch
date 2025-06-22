@@ -6,7 +6,7 @@ import jwt
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from reddit_watcher.config import get_settings
+from reddit_watcher.config import Settings
 
 security = HTTPBearer()
 
@@ -19,8 +19,8 @@ class AuthMiddleware:
     to provide secure access control for skill execution endpoints.
     """
 
-    def __init__(self):
-        self.settings = get_settings()
+    def __init__(self, config: Settings):
+        self.config = config
 
     async def verify_token(
         self, credentials: HTTPAuthorizationCredentials | None = None
@@ -45,14 +45,14 @@ class AuthMiddleware:
         token = credentials.credentials
 
         # Check API key first
-        if self.settings.a2a_api_key and token == self.settings.a2a_api_key:
+        if self.config.a2a_api_key and token == self.config.a2a_api_key:
             return "api_key"
 
         # Check JWT token
-        if self.settings.jwt_secret:
+        if self.config.jwt_secret:
             try:
                 payload = jwt.decode(
-                    token, self.settings.jwt_secret, algorithms=["HS256"]
+                    token, self.config.jwt_secret, algorithms=["HS256"]
                 )
                 return payload.get("sub", "unknown")
             except jwt.InvalidTokenError as e:

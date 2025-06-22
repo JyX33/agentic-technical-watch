@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from reddit_watcher.config import Settings, get_settings, reset_settings
+from reddit_watcher.config import Settings, create_config, get_settings, reset_settings
 
 
 class TestSettings:
@@ -194,7 +194,7 @@ class TestSettings:
 
 
 class TestSettingsSingleton:
-    """Test the singleton pattern for Settings."""
+    """Test the singleton pattern for Settings (backward compatibility)."""
 
     def setup_method(self):
         """Reset settings singleton before each test."""
@@ -231,6 +231,53 @@ class TestSettingsSingleton:
             assert settings1 is not settings2
             assert settings2.debug is True
             assert settings2.debug != initial_debug
+
+
+class TestDependencyInjection:
+    """Test the dependency injection pattern for Settings."""
+
+    def test_create_config_factory(self):
+        """Test that create_config creates independent instances."""
+        config1 = create_config()
+        config2 = create_config()
+
+        # Different instances
+        assert config1 is not config2
+        assert id(config1) != id(config2)
+
+        # Same default values
+        assert config1.app_name == config2.app_name
+        assert config1.debug == config2.debug
+
+    def test_create_config_independence(self):
+        """Test that created configs are independent of singleton."""
+        singleton = get_settings()
+        injected = create_config()
+
+        # Different instances
+        assert singleton is not injected
+        assert id(singleton) != id(injected)
+
+        # Same values but independent
+        assert singleton.app_name == injected.app_name
+
+    def test_config_protocol_compliance(self):
+        """Test that Settings implements ConfigProvider protocol."""
+        config = create_config()
+
+        # Test protocol methods exist and work
+        assert hasattr(config, "a2a_port")
+        assert hasattr(config, "a2a_host")
+        assert hasattr(config, "a2a_api_key")
+        assert hasattr(config, "a2a_bearer_token")
+        assert hasattr(config, "redis_url")
+        assert hasattr(config, "database_url")
+        assert hasattr(config, "processing_interval")
+
+        # Test values are accessible
+        assert isinstance(config.a2a_port, int)
+        assert isinstance(config.a2a_host, str)
+        assert isinstance(config.redis_url, str)
 
 
 class TestSettingsIntegration:

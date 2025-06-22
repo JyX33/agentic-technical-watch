@@ -12,7 +12,11 @@ class Settings(BaseSettings):
     Unified configuration for the Reddit Technical Watcher A2A system.
 
     Supports configuration via environment variables and .env files.
-    Implements singleton pattern for consistent access across agents.
+    Can be used as a singleton via get_settings() or as dependency injection
+    via create_config() for better testability and architecture.
+
+    Note: This class implements the ConfigProvider protocol from agents.base
+    to support dependency injection while maintaining backward compatibility.
     """
 
     model_config = SettingsConfigDict(
@@ -253,7 +257,7 @@ class Settings(BaseSettings):
         return bool(self.smtp_server and self.smtp_username and self.smtp_password)
 
 
-# Singleton instance
+# Singleton instance (maintained for backward compatibility)
 _settings: Settings | None = None
 
 
@@ -262,6 +266,7 @@ def get_settings() -> Settings:
     Get the singleton Settings instance.
 
     This ensures consistent configuration access across all A2A agents.
+    Maintained for backward compatibility with existing code.
     """
     global _settings
     if _settings is None:
@@ -273,3 +278,31 @@ def reset_settings() -> None:
     """Reset the singleton instance. Used for testing."""
     global _settings
     _settings = None
+
+
+def create_config() -> Settings:
+    """
+    Create a new Settings instance for dependency injection.
+
+    This function provides a factory method for creating Settings instances
+    that can be injected into agents, avoiding the singleton pattern.
+
+    Returns:
+        New Settings instance
+    """
+    return Settings()
+
+
+def create_config_from_env(env_file: str | None = None) -> Settings:
+    """
+    Create a new Settings instance from environment file.
+
+    Args:
+        env_file: Optional path to environment file
+
+    Returns:
+        New Settings instance with environment configuration
+    """
+    if env_file:
+        return Settings(_env_file=env_file)
+    return Settings()

@@ -11,6 +11,7 @@ from sqlalchemy import and_, desc
 
 from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import BaseA2AAgent
+from reddit_watcher.config import Settings
 from reddit_watcher.database.utils import get_db_session
 from reddit_watcher.models import (
     AgentTask,
@@ -34,8 +35,9 @@ class CoordinatorAgent(BaseA2AAgent):
     - Error handling and retry logic
     """
 
-    def __init__(self):
+    def __init__(self, config: Settings):
         super().__init__(
+            config=config,
             agent_type="coordinator",
             name="Workflow Coordinator Agent",
             description="Orchestrates the complete Reddit monitoring workflow via A2A task delegation",
@@ -44,10 +46,10 @@ class CoordinatorAgent(BaseA2AAgent):
 
         # Agent endpoints for delegation
         self._agent_endpoints = {
-            "retrieval": f"http://localhost:{self.settings.a2a_port + 1}",
-            "filter": f"http://localhost:{self.settings.a2a_port + 2}",
-            "summarise": f"http://localhost:{self.settings.a2a_port + 3}",
-            "alert": f"http://localhost:{self.settings.a2a_port + 4}",
+            "retrieval": f"http://localhost:{self.config.a2a_port + 1}",
+            "filter": f"http://localhost:{self.config.a2a_port + 2}",
+            "summarise": f"http://localhost:{self.config.a2a_port + 3}",
+            "alert": f"http://localhost:{self.config.a2a_port + 4}",
         }
 
         # HTTP session for A2A communication
@@ -267,7 +269,7 @@ class CoordinatorAgent(BaseA2AAgent):
 
     async def _run_monitoring_cycle(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Execute complete monitoring cycle."""
-        topics = parameters.get("topics", self.settings.reddit_topics)
+        topics = parameters.get("topics", self.config.reddit_topics)
         subreddits = parameters.get("subreddits", ["all"])
         # force_run = parameters.get("force_run", False)  # TODO: Implement forced execution
 
@@ -683,7 +685,7 @@ class CoordinatorAgent(BaseA2AAgent):
             summaries_created = (
                 summarise_result.get("summaries_created", 0) if summarise_result else 0
             )
-            alert_message = f"Reddit monitoring cycle completed:\n• Found {relevant_posts} relevant posts\n• Created {summaries_created} summaries\n• Topics monitored: {', '.join(self.settings.reddit_topics)}"
+            alert_message = f"Reddit monitoring cycle completed:\n• Found {relevant_posts} relevant posts\n• Created {summaries_created} summaries\n• Topics monitored: {', '.join(self.config.reddit_topics)}"
 
             alert_title = (
                 f"Reddit Monitoring Alert - {relevant_posts} relevant posts found"
@@ -692,14 +694,14 @@ class CoordinatorAgent(BaseA2AAgent):
             alert_metadata = {
                 "relevant_posts": relevant_posts,
                 "summaries_created": summaries_created,
-                "monitoring_topics": self.settings.reddit_topics,
+                "monitoring_topics": self.config.reddit_topics,
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
             alerts_sent = 0
 
             # Send Slack alert if configured
-            if self.settings.has_slack_webhook():
+            if self.config.has_slack_webhook():
                 slack_params = {
                     "skill": "sendSlack",
                     "parameters": {
@@ -717,7 +719,7 @@ class CoordinatorAgent(BaseA2AAgent):
                     alerts_sent += 1
 
             # Send email alert if configured
-            if self.settings.has_smtp_config() and self.settings.email_recipients:
+            if self.config.has_smtp_config() and self.config.email_recipients:
                 email_params = {
                     "skill": "sendEmail",
                     "parameters": {

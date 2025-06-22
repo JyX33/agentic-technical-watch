@@ -9,7 +9,7 @@ from reddit_watcher.agents.base import (
     RedditSkillParameters,
 )
 from reddit_watcher.agents.test_agent import MockA2AAgent
-from reddit_watcher.config import reset_settings
+from reddit_watcher.config import create_config, reset_settings
 from tests.test_utils import create_test_context, create_test_event_queue
 
 
@@ -26,7 +26,8 @@ class TestBaseA2AAgent:
 
     def test_agent_initialization(self):
         """Test basic agent initialization."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
 
         assert agent.agent_type == "test"
         assert agent.name == "Test A2A Agent"
@@ -34,11 +35,12 @@ class TestBaseA2AAgent:
             agent.description == "Test agent for validating A2A protocol implementation"
         )
         assert agent.version == "1.0.0"
-        assert agent.settings is not None
+        assert agent.config is not None
 
     def test_agent_skills(self):
         """Test agent skills definition."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         skills = agent.get_skills()
 
         assert len(skills) == 3
@@ -49,7 +51,8 @@ class TestBaseA2AAgent:
 
     def test_agent_card_generation(self):
         """Test Agent Card generation."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         agent_card = agent.generate_agent_card()
 
         assert agent_card.name == agent.name
@@ -61,7 +64,8 @@ class TestBaseA2AAgent:
 
     def test_agent_card_json(self):
         """Test Agent Card JSON serialization."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         agent_card_json = agent.get_agent_card_json()
 
         # Should be valid JSON
@@ -73,7 +77,8 @@ class TestBaseA2AAgent:
 
     def test_common_health_status(self):
         """Test common health status."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         health = agent.get_common_health_status()
 
         assert health["agent_type"] == "test"
@@ -89,7 +94,8 @@ class TestBaseA2AAgent:
             {"A2A_API_KEY": "test-api-key", "A2A_BEARER_TOKEN": "test-bearer-token"},
         ):
             reset_settings()
-            agent = MockA2AAgent()
+            config = create_config()
+            agent = MockA2AAgent(config)
             agent_card = agent.generate_agent_card()
 
             # Should have security schemes
@@ -104,7 +110,8 @@ class TestBaseA2AAgent:
     @pytest.mark.asyncio
     async def test_execute_health_check_skill(self):
         """Test executing health check skill."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         result = await agent.execute_skill("health_check", {})
 
         assert result["skill"] == "health_check"
@@ -115,7 +122,8 @@ class TestBaseA2AAgent:
     @pytest.mark.asyncio
     async def test_execute_echo_skill(self):
         """Test executing echo skill."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         test_message = "Hello, A2A!"
         result = await agent.execute_skill("echo", {"message": test_message})
 
@@ -128,7 +136,8 @@ class TestBaseA2AAgent:
     @pytest.mark.asyncio
     async def test_execute_reddit_topics_skill(self):
         """Test executing reddit topics skill."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         result = await agent.execute_skill("reddit_topics", {})
 
         assert result["skill"] == "reddit_topics"
@@ -139,7 +148,8 @@ class TestBaseA2AAgent:
     @pytest.mark.asyncio
     async def test_execute_unknown_skill(self):
         """Test executing unknown skill raises error."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
 
         with pytest.raises(ValueError, match="Unknown skill"):
             await agent.execute_skill("unknown_skill", {})
@@ -159,7 +169,8 @@ class TestBaseA2AAgentExecutor:
     @pytest.mark.asyncio
     async def test_executor_initialization(self):
         """Test executor initialization."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         assert executor.agent == agent
@@ -168,7 +179,8 @@ class TestBaseA2AAgentExecutor:
     @pytest.mark.asyncio
     async def test_execute_with_json_message(self):
         """Test executor with JSON message."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         # Create test context and event queue
@@ -190,7 +202,8 @@ class TestBaseA2AAgentExecutor:
     @pytest.mark.asyncio
     async def test_execute_with_text_message(self):
         """Test executor with text message."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         # Create test context and event queue
@@ -211,7 +224,8 @@ class TestBaseA2AAgentExecutor:
     @pytest.mark.asyncio
     async def test_execute_with_no_message(self):
         """Test executor with no message."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         # Create test context with no message
@@ -226,7 +240,8 @@ class TestBaseA2AAgentExecutor:
     @pytest.mark.asyncio
     async def test_execute_with_no_skill(self):
         """Test executor with message but no skill."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         # Create test context with message but no skill
@@ -243,7 +258,8 @@ class TestBaseA2AAgentExecutor:
     @pytest.mark.asyncio
     async def test_cancel_task(self):
         """Test task cancellation."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         # Create test context and event queue
@@ -257,7 +273,8 @@ class TestBaseA2AAgentExecutor:
 
     def test_parse_json_request(self):
         """Test parsing JSON request."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         json_message = json.dumps({"skill": "echo", "parameters": {"message": "test"}})
@@ -268,7 +285,8 @@ class TestBaseA2AAgentExecutor:
 
     def test_parse_text_request(self):
         """Test parsing text request."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         text_message = "Hello, agent!"
@@ -279,7 +297,8 @@ class TestBaseA2AAgentExecutor:
 
     def test_parse_invalid_json(self):
         """Test parsing invalid JSON."""
-        agent = MockA2AAgent()
+        config = create_config()
+        agent = MockA2AAgent(config)
         executor = BaseA2AAgentExecutor(agent)
 
         invalid_json = '{"skill": "echo", "parameters":'  # Incomplete JSON

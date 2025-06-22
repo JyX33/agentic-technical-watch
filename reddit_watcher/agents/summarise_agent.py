@@ -14,6 +14,7 @@ from google.api_core import exceptions as google_exceptions
 
 from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import BaseA2AAgent
+from reddit_watcher.config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,9 @@ class SummariseAgent(BaseA2AAgent):
     - Extractive fallback when AI models fail
     """
 
-    def __init__(self):
+    def __init__(self, config: Settings):
         super().__init__(
+            config=config,
             agent_type="summarise",
             name="Content Summarization Agent",
             description="Generates AI-powered summaries using Gemini models with extractive fallback",
@@ -50,7 +52,7 @@ class SummariseAgent(BaseA2AAgent):
         self._gemini_initialized = False
         self._nlp_model: spacy.language.Language | None = None
         self._rate_limit_state = RateLimitState(
-            max_requests_per_minute=self.settings.gemini_rate_limit
+            max_requests_per_minute=self.config.gemini_rate_limit
         )
 
         self._initialize_gemini()
@@ -58,14 +60,14 @@ class SummariseAgent(BaseA2AAgent):
 
     def _initialize_gemini(self) -> None:
         """Initialize the Google Gemini client."""
-        if not self.settings.has_gemini_credentials():
+        if not self.config.has_gemini_credentials():
             self.logger.warning(
                 "Gemini API key not configured. Summarization will use extractive fallback only."
             )
             return
 
         try:
-            genai.configure(api_key=self.settings.gemini_api_key)
+            genai.configure(api_key=self.config.gemini_api_key)
             self._gemini_initialized = True
             self.logger.info("Gemini client initialized successfully")
         except Exception as e:
@@ -189,9 +191,9 @@ class SummariseAgent(BaseA2AAgent):
             return None
 
         model_name = (
-            self.settings.gemini_model_fallback
+            self.config.gemini_model_fallback
             if use_fallback_model
-            else self.settings.gemini_model_primary
+            else self.config.gemini_model_primary
         )
 
         try:
@@ -448,8 +450,8 @@ Summary:"""
                 "rate_limit_window_remaining": max(
                     0, 60 - (time.time() - self._rate_limit_state.window_start)
                 ),
-                "primary_model": self.settings.gemini_model_primary,
-                "fallback_model": self.settings.gemini_model_fallback,
+                "primary_model": self.config.gemini_model_primary,
+                "fallback_model": self.config.gemini_model_fallback,
                 "max_requests_per_minute": self._rate_limit_state.max_requests_per_minute,
             }
         )

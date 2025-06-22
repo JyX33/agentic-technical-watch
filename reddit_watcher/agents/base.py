@@ -4,7 +4,7 @@
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
 
 from reddit_watcher.a2a_protocol import (
     AgentCapabilities,
@@ -19,9 +19,38 @@ from reddit_watcher.a2a_protocol import (
     RequestContext,
     new_agent_text_message,
 )
-from reddit_watcher.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+class ConfigProvider(Protocol):
+    """
+    Protocol for configuration providers.
+
+    This allows dependency injection of configuration objects without
+    tight coupling to the Settings class implementation.
+    """
+
+    @property
+    def a2a_port(self) -> int: ...
+
+    @property
+    def a2a_host(self) -> str: ...
+
+    @property
+    def a2a_api_key(self) -> str: ...
+
+    @property
+    def a2a_bearer_token(self) -> str: ...
+
+    @property
+    def redis_url(self) -> str: ...
+
+    @property
+    def database_url(self) -> str: ...
+
+    @property
+    def processing_interval(self) -> int: ...
 
 
 class BaseA2AAgent(ABC):
@@ -34,22 +63,28 @@ class BaseA2AAgent(ABC):
     """
 
     def __init__(
-        self, agent_type: str, name: str, description: str, version: str = "1.0.0"
+        self,
+        config: ConfigProvider,
+        agent_type: str,
+        name: str,
+        description: str,
+        version: str = "1.0.0",
     ):
         """
-        Initialize the base A2A agent.
+        Initialize the base A2A agent with dependency injection.
 
         Args:
+            config: Configuration provider (injected dependency)
             agent_type: Type of agent (e.g., "retrieval", "filter", "summarise", "alert", "coordinator")
             name: Human-readable name of the agent
             description: Description of the agent's purpose and capabilities
             version: Agent version for compatibility tracking
         """
+        self.config = config
         self.agent_type = agent_type
         self.name = name
         self.description = description
         self.version = version
-        self.settings = get_settings()
         self.logger = logging.getLogger(f"{__name__}.{agent_type}")
 
     async def __aenter__(self):
@@ -106,7 +141,7 @@ class BaseA2AAgent(ABC):
 
         # Security schemes
         security_schemes = []
-        if self.settings.a2a_api_key:
+        if self.config.a2a_api_key:
             security_schemes.append(
                 APIKeySecurityScheme(
                     name="X-API-Key",
@@ -115,7 +150,7 @@ class BaseA2AAgent(ABC):
                 )
             )
 
-        if self.settings.a2a_bearer_token:
+        if self.config.a2a_bearer_token:
             security_schemes.append(
                 HTTPAuthSecurityScheme(
                     name="bearer_auth",
@@ -138,7 +173,7 @@ class BaseA2AAgent(ABC):
             description=self.description,
             version=self.version,
             provider=provider,
-            url=f"http://localhost:{self.settings.a2a_port}/a2a",
+            url=f"http://localhost:{self.config.a2a_port}/a2a",
             defaultInputModes=["text/plain", "application/json"],
             defaultOutputModes=["application/json"],
             capabilities=capabilities,
@@ -182,11 +217,11 @@ class BaseA2AAgent(ABC):
             "status": "healthy",
             "uptime": "active",
             "settings": {
-                "redis_url": self.settings.redis_url,
+                "redis_url": self.config.redis_url,
                 "database_url": "configured"
-                if self.settings.database_url
+                if self.config.database_url
                 else "not_configured",
-                "processing_interval": self.settings.processing_interval,
+                "processing_interval": self.config.processing_interval,
             },
         }
 

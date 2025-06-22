@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from reddit_watcher.a2a_protocol import EventQueue, RequestContext
 from reddit_watcher.agents.base import BaseA2AAgent, BaseA2AAgentExecutor
 from reddit_watcher.auth_middleware import AuthMiddleware
-from reddit_watcher.config import get_settings
+from reddit_watcher.config import Settings
 from reddit_watcher.shutdown import get_shutdown_manager, setup_graceful_shutdown
 
 logger = logging.getLogger(__name__)
@@ -31,8 +31,8 @@ class A2AServiceDiscovery:
     within the Reddit Technical Watcher ecosystem.
     """
 
-    def __init__(self):
-        self.settings = get_settings()
+    def __init__(self, config: Settings):
+        self.config = config
         self.redis_client: redis.Redis | None = None
         self.logger = logging.getLogger(f"{__name__}.discovery")
 
@@ -40,7 +40,7 @@ class A2AServiceDiscovery:
         """Initialize Redis connection for service discovery."""
         try:
             self.redis_client = redis.from_url(
-                self.settings.redis_url,
+                self.config.redis_url,
                 decode_responses=True,
                 socket_connect_timeout=5,
                 socket_timeout=5,
@@ -68,9 +68,9 @@ class A2AServiceDiscovery:
                 "type": agent.agent_type,
                 "description": agent.description,
                 "version": agent.version,
-                "service_url": f"http://localhost:{self.settings.a2a_port}",
-                "health_endpoint": f"http://localhost:{self.settings.a2a_port}/health",
-                "agent_card_endpoint": f"http://localhost:{self.settings.a2a_port}/.well-known/agent.json",
+                "service_url": f"http://localhost:{self.config.a2a_port}",
+                "health_endpoint": f"http://localhost:{self.config.a2a_port}/health",
+                "agent_card_endpoint": f"http://localhost:{self.config.a2a_port}/.well-known/agent.json",
                 "last_seen": str(asyncio.get_event_loop().time()),
             }
 
@@ -170,17 +170,18 @@ class A2AAgentServer:
     service discovery endpoints, and health checks.
     """
 
-    def __init__(self, agent: BaseA2AAgent):
+    def __init__(self, agent: BaseA2AAgent, config: Settings):
         """
         Initialize the A2A agent server.
 
         Args:
             agent: The agent to serve
+            config: Configuration provider (injected dependency)
         """
         self.agent = agent
-        self.settings = get_settings()
-        self.discovery = A2AServiceDiscovery()
-        self.auth = AuthMiddleware()
+        self.config = config
+        self.discovery = A2AServiceDiscovery(config)
+        self.auth = AuthMiddleware(config)
         self.a2a_app: FastAPI | None = None
         self.app: FastAPI | None = None
         self.logger = logging.getLogger(f"{__name__}.{agent.agent_type}")
@@ -553,8 +554,8 @@ class A2AAgentServer:
 
             config = uvicorn.Config(
                 app,
-                host=self.settings.a2a_host,
-                port=self.settings.a2a_port,
+                host=self.config.a2a_host,
+                port=self.config.a2a_port,
                 log_level="info",
                 access_log=True,
             )
@@ -572,7 +573,7 @@ class A2AAgentServer:
 
             self.logger.info(
                 f"Starting A2A server for {self.agent.name} on "
-                f"http://{self.settings.a2a_host}:{self.settings.a2a_port}"
+                f"http://{self.config.a2a_host}:{self.config.a2a_port}"
             )
 
             await server.serve()
@@ -592,25 +593,27 @@ class A2AAgentServer:
             raise
 
 
-def create_agent_server(agent: BaseA2AAgent) -> A2AAgentServer:
+def create_agent_server(agent: BaseA2AAgent, config: Settings) -> A2AAgentServer:
     """
     Factory function to create an A2A agent server.
 
     Args:
         agent: The agent to serve
+        config: Configuration provider (injected dependency)
 
     Returns:
         Configured A2AAgentServer instance
     """
-    return A2AAgentServer(agent)
+    return A2AAgentServer(agent, config)
 
 
-def run_agent_server(agent: BaseA2AAgent) -> None:
+def run_agent_server(agent: BaseA2AAgent, config: Settings) -> None:
     """
     Run an A2A agent server (blocking).
 
     Args:
         agent: The agent to serve
+        config: Configuration provider (injected dependency)
     """
-    server = create_agent_server(agent)
+    server = create_agent_server(agent, config)
     server.run()

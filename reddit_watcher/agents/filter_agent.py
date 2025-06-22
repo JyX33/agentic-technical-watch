@@ -12,6 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from reddit_watcher.a2a_protocol import AgentSkill
 from reddit_watcher.agents.base import BaseA2AAgent
+from reddit_watcher.config import Settings
 from reddit_watcher.database.utils import get_db_session
 from reddit_watcher.models import ContentFilter, RedditComment, RedditPost
 
@@ -29,8 +30,9 @@ class FilterAgent(BaseA2AAgent):
     - Relevance assessment with configurable thresholds
     """
 
-    def __init__(self):
+    def __init__(self, config: Settings):
         super().__init__(
+            config=config,
             agent_type="filter",
             name="Content Filter Agent",
             description="Assesses content relevance using keyword matching and semantic similarity",
@@ -138,8 +140,8 @@ class FilterAgent(BaseA2AAgent):
         semantic_status = {
             "model_initialized": self._semantic_model is not None,
             "cached_embeddings": len(self._topic_embeddings),
-            "configured_topics": self.settings.reddit_topics,
-            "relevance_threshold": self.settings.relevance_threshold,
+            "configured_topics": self.config.reddit_topics,
+            "relevance_threshold": self.config.relevance_threshold,
         }
 
         if self._semantic_model:
@@ -169,7 +171,7 @@ class FilterAgent(BaseA2AAgent):
         """Filter content using keyword matching."""
         content = parameters.get("content", "")
         title = parameters.get("title", "")
-        topics = parameters.get("topics", self.settings.reddit_topics)
+        topics = parameters.get("topics", self.config.reddit_topics)
 
         if not content and not title:
             return {
@@ -300,7 +302,7 @@ class FilterAgent(BaseA2AAgent):
 
         content = parameters.get("content", "")
         title = parameters.get("title", "")
-        topics = parameters.get("topics", self.settings.reddit_topics)
+        topics = parameters.get("topics", self.config.reddit_topics)
 
         if not content and not title:
             return {
@@ -328,8 +330,8 @@ class FilterAgent(BaseA2AAgent):
                     "best_topic": similarity_results["best_topic"],
                     "topic_similarities": similarity_results["topic_similarities"],
                     "is_relevant": similarity_results["max_similarity"]
-                    >= self.settings.relevance_threshold,
-                    "threshold_used": self.settings.relevance_threshold,
+                    >= self.config.relevance_threshold,
+                    "threshold_used": self.config.relevance_threshold,
                 },
             }
 
@@ -378,7 +380,7 @@ class FilterAgent(BaseA2AAgent):
     async def _batch_filter_posts(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Batch filter multiple Reddit posts."""
         post_ids = parameters.get("post_ids", [])
-        topics = parameters.get("topics", self.settings.reddit_topics)
+        topics = parameters.get("topics", self.config.reddit_topics)
         use_semantic = parameters.get("use_semantic", True)
 
         if not post_ids:
@@ -499,7 +501,7 @@ class FilterAgent(BaseA2AAgent):
             semantic_similarity * semantic_weight
         )
 
-        is_relevant = relevance_score >= self.settings.relevance_threshold
+        is_relevant = relevance_score >= self.config.relevance_threshold
 
         # Determine filter reason
         if is_relevant:
@@ -512,7 +514,7 @@ class FilterAgent(BaseA2AAgent):
                 reasons.append(f"Semantic similarity: {semantic_similarity:.3f}")
             filter_reason = "Relevant - " + "; ".join(reasons)
         else:
-            filter_reason = f"Not relevant - Score: {relevance_score:.3f} < {self.settings.relevance_threshold}"
+            filter_reason = f"Not relevant - Score: {relevance_score:.3f} < {self.config.relevance_threshold}"
 
         return {
             "relevance_score": relevance_score,
@@ -527,7 +529,7 @@ class FilterAgent(BaseA2AAgent):
     ) -> dict[str, Any]:
         """Batch filter multiple Reddit comments."""
         comment_ids = parameters.get("comment_ids", [])
-        topics = parameters.get("topics", self.settings.reddit_topics)
+        topics = parameters.get("topics", self.config.reddit_topics)
         use_semantic = parameters.get("use_semantic", True)
 
         if not comment_ids:
@@ -654,7 +656,7 @@ class FilterAgent(BaseA2AAgent):
             semantic_similarity * semantic_weight
         )
 
-        is_relevant = relevance_score >= self.settings.relevance_threshold
+        is_relevant = relevance_score >= self.config.relevance_threshold
 
         # Determine filter reason
         if is_relevant:
@@ -667,7 +669,7 @@ class FilterAgent(BaseA2AAgent):
                 reasons.append(f"Semantic similarity: {semantic_similarity:.3f}")
             filter_reason = "Relevant - " + "; ".join(reasons)
         else:
-            filter_reason = f"Not relevant - Score: {relevance_score:.3f} < {self.settings.relevance_threshold}"
+            filter_reason = f"Not relevant - Score: {relevance_score:.3f} < {self.config.relevance_threshold}"
 
         return {
             "relevance_score": relevance_score,
@@ -684,8 +686,8 @@ class FilterAgent(BaseA2AAgent):
         filter_health = {
             "semantic_model_initialized": self._semantic_model is not None,
             "cached_topic_embeddings": len(self._topic_embeddings),
-            "configured_topics": len(self.settings.reddit_topics),
-            "relevance_threshold": self.settings.relevance_threshold,
+            "configured_topics": len(self.config.reddit_topics),
+            "relevance_threshold": self.config.relevance_threshold,
         }
 
         if self._semantic_model:
