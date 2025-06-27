@@ -372,8 +372,8 @@ class ResourceMonitor:
                 stats["success_count"] += 1
 
         # Calculate derived metrics
-        for agent_type, skills in agent_stats.items():
-            for skill_name, stats in skills.items():
+        for _agent_type, skills in agent_stats.items():
+            for _skill_name, stats in skills.items():
                 stats["avg_execution_time"] = (
                     stats["total_execution_time"] / stats["count"]
                 )

@@ -316,9 +316,7 @@ class WorkflowSimulator:
             with get_db_session() as session:
                 # Get relevant posts for summarization
                 relevant_filters = (
-                    session.query(ContentFilter)
-                    .filter(ContentFilter.is_relevant == True)
-                    .all()
+                    session.query(ContentFilter).filter(ContentFilter.is_relevant).all()
                 )
 
                 relevant_posts = [
@@ -353,7 +351,7 @@ class WorkflowSimulator:
                             .join(RedditPost)
                             .filter(
                                 RedditPost.topic == topic,
-                                ContentFilter.is_relevant == True,
+                                ContentFilter.is_relevant,
                             )
                             .first()
                         )

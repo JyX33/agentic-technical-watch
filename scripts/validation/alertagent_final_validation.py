@@ -41,7 +41,7 @@ class AlertAgentValidator:
 
         # Test 1: Agent Card Generation
         try:
-            agent_card = self.alert_agent.generate_agent_card()
+            self.alert_agent.generate_agent_card()
             agent_card_json = self.alert_agent.get_agent_card_json()
             parsed_card = json.loads(agent_card_json)
 

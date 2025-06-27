@@ -215,7 +215,7 @@ class ObservabilityIntegration:
         total_errors = 0
         response_times = []
 
-        for agent_type, collector in self.metrics_collectors.items():
+        for _agent_type, collector in self.metrics_collectors.items():
             if hasattr(collector, "http_requests_total"):
                 # Aggregate HTTP metrics
                 # Note: This is a simplified aggregation - in production,

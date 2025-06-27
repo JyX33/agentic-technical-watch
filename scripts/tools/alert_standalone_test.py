@@ -51,7 +51,7 @@ class StandaloneAlertTester:
         print("\n📇 Testing Agent Card...")
 
         try:
-            agent_card = self.alert_agent.generate_agent_card()
+            self.alert_agent.generate_agent_card()
             agent_card_json = self.alert_agent.get_agent_card_json()
 
             # Validate structure

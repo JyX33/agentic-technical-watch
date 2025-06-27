@@ -349,7 +349,7 @@ class HealthMonitor:
         try:
             # Test database connection with a simple query
             async with self.database_engine.begin() as conn:
-                result = await asyncio.wait_for(
+                await asyncio.wait_for(
                     conn.execute(text("SELECT 1")), timeout=self.timeout
                 )
 

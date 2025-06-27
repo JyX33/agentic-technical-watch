@@ -3,7 +3,7 @@
 
 
 import jwt
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from reddit_watcher.config import Settings
@@ -23,7 +23,7 @@ class AuthMiddleware:
         self.config = config
 
     async def verify_token(
-        self, credentials: HTTPAuthorizationCredentials | None = None
+        self, credentials: HTTPAuthorizationCredentials = Depends(security)
     ) -> str:
         """
         Verify bearer token or API key.
@@ -37,11 +37,6 @@ class AuthMiddleware:
         Raises:
             HTTPException: If authentication fails
         """
-        if credentials is None:
-            raise HTTPException(
-                status_code=401, detail="Missing authorization credentials"
-            )
-
         token = credentials.credentials
 
         # Check API key first

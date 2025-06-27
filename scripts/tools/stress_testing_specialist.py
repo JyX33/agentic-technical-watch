@@ -475,7 +475,7 @@ class StressTestingSpecialist:
                         result = session.execute(
                             text("SELECT pg_sleep(0.1), current_timestamp, version()")
                         )
-                        data = result.fetchone()
+                        result.fetchone()
                         return time.time() - conn_start, True, None
                 except Exception as e:
                     return time.time() - conn_start, False, str(e)

@@ -130,7 +130,7 @@ class ErrorRecoveryValidator:
             async def failure_func():
                 raise ValueError("Test failure")
 
-            for i in range(2):  # Not enough to open circuit
+            for _i in range(2):  # Not enough to open circuit
                 try:
                     await cb.call(failure_func)
                 except ValueError:
@@ -151,7 +151,7 @@ class ErrorRecoveryValidator:
             # Test 5: Circuit rejects calls when open
             try:
                 await cb.call(success_func)
-                assert False, "Should have raised CircuitBreakerError"
+                raise AssertionError("Should have raised CircuitBreakerError")
             except CircuitBreakerError:
                 pass
 
@@ -204,7 +204,7 @@ class ErrorRecoveryValidator:
             # Test timeout handling
             try:
                 await cb.call(timeout_func)
-                assert False, "Should have timed out"
+                raise AssertionError("Should have timed out")
             except TimeoutError:
                 pass
 
@@ -214,7 +214,7 @@ class ErrorRecoveryValidator:
             # Second timeout should open circuit
             try:
                 await cb.call(timeout_func)
-                assert False, "Should have timed out"
+                raise AssertionError("Should have timed out")
             except TimeoutError:
                 pass
 
@@ -648,7 +648,7 @@ class ErrorRecoveryValidator:
 
             # Run concurrent calls
             tasks = []
-            for i in range(10):
+            for _i in range(10):
                 task = asyncio.create_task(cb.call(concurrent_flaky_function))
                 tasks.append(task)
                 await asyncio.sleep(0.05)  # Stagger the calls slightly
@@ -722,7 +722,6 @@ class ErrorRecoveryValidator:
             assert (await alert_cb.call(working_agent))["status"] == "working"
 
             # Test fallback mechanism
-            fallback_result = {"status": "degraded", "mode": "cached_data"}
 
             # Simulate workflow with fallback
             workflow_result = {
