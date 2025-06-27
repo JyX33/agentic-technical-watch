@@ -1238,10 +1238,8 @@ class CoordinatorAgent(BaseA2AAgent):
                 "error": str(e),
             }
 
-    def get_health_status(self) -> dict[str, Any]:
-        """Get detailed health status for this agent."""
-        base_health = self.get_common_health_status()
-
+    async def get_agent_specific_health(self) -> dict[str, Any]:
+        """Get coordinator-specific health information."""
         coordinator_health = {
             "managed_agents": list(self._agent_endpoints.keys()),
             "http_session_active": self._http_session is not None
@@ -1262,8 +1260,41 @@ class CoordinatorAgent(BaseA2AAgent):
             },
         }
 
-        base_health["coordinator_specific"] = coordinator_health
-        return base_health
+        # Check agent discovery status
+        agent_discovery_status = {}
+        for agent_name, endpoint in self._agent_endpoints.items():
+            try:
+                status = await self._check_single_agent_health(agent_name, endpoint)
+                agent_discovery_status[agent_name] = {
+                    "discovered": True,
+                    "endpoint": endpoint,
+                    "reachable": status.get("status") == "healthy",
+                }
+            except Exception as e:
+                agent_discovery_status[agent_name] = {
+                    "discovered": True,
+                    "endpoint": endpoint,
+                    "reachable": False,
+                    "error": str(e),
+                }
+
+        coordinator_health["agent_discovery"] = agent_discovery_status
+
+        # Check workflow coordination status
+        try:
+            workflow_status = await self._get_recent_workflow_status()
+            coordinator_health["workflow_coordination"] = {
+                "status": "operational",
+                "recent_workflows": workflow_status.get("recent_count", 0),
+                "last_error": None,
+            }
+        except Exception as e:
+            coordinator_health["workflow_coordination"] = {
+                "status": "error",
+                "error": str(e),
+            }
+
+        return coordinator_health
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -1296,8 +1327,11 @@ if __name__ == "__main__":
     from .server import A2AAgentServer
 
     async def main():
-        agent = CoordinatorAgent()
-        server = A2AAgentServer(agent)
+        from ..config import get_settings
+
+        config = get_settings()
+        agent = CoordinatorAgent(config)
+        server = A2AAgentServer(agent, config)
         await server.start_server()
 
     asyncio.run(main())

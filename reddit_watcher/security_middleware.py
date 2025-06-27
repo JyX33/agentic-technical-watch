@@ -45,7 +45,6 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         whitelist = {"127.0.0.1", "::1", "localhost"}
 
         # Add private network ranges
-        private_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
 
         # Add any additional whitelisted IPs from configuration
         if hasattr(self.config, "rate_limit_whitelist"):

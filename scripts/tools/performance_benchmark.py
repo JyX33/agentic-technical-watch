@@ -94,12 +94,10 @@ class PerformanceBenchmark:
         self.logger.info("🔬 Benchmarking ML model loading performance...")
 
         # Test sentence transformer loading
-        with PerformanceTimer("ml_model_loading_sentence_transformer") as timer:
+        with PerformanceTimer("ml_model_loading_sentence_transformer"):
             try:
                 start_time = time.time()
-                model = await self.model_cache.get_sentence_transformer(
-                    "all-MiniLM-L6-v2"
-                )
+                await self.model_cache.get_sentence_transformer("all-MiniLM-L6-v2")
                 duration = time.time() - start_time
 
                 self.results.append(
@@ -129,7 +127,7 @@ class PerformanceBenchmark:
                 self.logger.error(f"❌ SentenceTransformer loading failed: {e}")
 
         # Test spaCy model loading
-        with PerformanceTimer("ml_model_loading_spacy") as timer:
+        with PerformanceTimer("ml_model_loading_spacy"):
             try:
                 start_time = time.time()
                 nlp = await self.model_cache.get_spacy_model(
@@ -163,12 +161,10 @@ class PerformanceBenchmark:
                 self.logger.error(f"❌ spaCy model loading failed: {e}")
 
         # Test cache performance (second load should be faster)
-        with PerformanceTimer("ml_model_cached_loading") as timer:
+        with PerformanceTimer("ml_model_cached_loading"):
             try:
                 start_time = time.time()
-                model = await self.model_cache.get_sentence_transformer(
-                    "all-MiniLM-L6-v2"
-                )
+                await self.model_cache.get_sentence_transformer("all-MiniLM-L6-v2")
                 duration = time.time() - start_time
 
                 self.results.append(
@@ -209,7 +205,7 @@ class PerformanceBenchmark:
         ] * 10  # 50 texts total
 
         # Benchmark optimized encoding
-        with PerformanceTimer("ml_optimized_inference") as timer:
+        with PerformanceTimer("ml_optimized_inference"):
             try:
                 start_time = time.time()
                 embeddings = await self.model_cache.encode_texts_optimized(
@@ -255,7 +251,7 @@ class PerformanceBenchmark:
         self.logger.info("🗄️ Benchmarking database operations...")
 
         # Test database health check
-        with PerformanceTimer("database_health_check") as timer:
+        with PerformanceTimer("database_health_check"):
             try:
                 start_time = time.time()
                 health = check_database_health()
@@ -287,7 +283,7 @@ class PerformanceBenchmark:
                 self.logger.error(f"❌ Database health check failed: {e}")
 
         # Test connection pool performance
-        with PerformanceTimer("database_connection_pool") as timer:
+        with PerformanceTimer("database_connection_pool"):
             try:
                 start_time = time.time()
                 engine = get_database_engine()
@@ -347,7 +343,7 @@ class PerformanceBenchmark:
         try:
             filter_agent = FilterAgent(self.config)
 
-            with PerformanceTimer("filter_agent_semantic_similarity") as timer:
+            with PerformanceTimer("filter_agent_semantic_similarity"):
                 start_time = time.time()
 
                 result = await filter_agent._filter_content_by_semantic_similarity(
@@ -397,7 +393,7 @@ class PerformanceBenchmark:
             try:
                 summarise_agent = SummariseAgent(self.config)
 
-                with PerformanceTimer("summarise_agent_fallback") as timer:
+                with PerformanceTimer("summarise_agent_fallback"):
                     start_time = time.time()
 
                     # Test extractive summarization (fallback)
@@ -459,7 +455,7 @@ class PerformanceBenchmark:
                 for i in range(50)
             ]
 
-            with PerformanceTimer("system_throughput_test") as timer:
+            with PerformanceTimer("system_throughput_test"):
                 start_time = time.time()
 
                 # Process posts in batches

@@ -30,7 +30,7 @@ async def test_alert_agent():
 
         # Test 1: Agent Card Generation
         try:
-            agent_card = alert_agent.generate_agent_card()
+            alert_agent.generate_agent_card()
             agent_card_json = alert_agent.get_agent_card_json()
             parsed_card = json.loads(agent_card_json)
 

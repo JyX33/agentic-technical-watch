@@ -304,7 +304,7 @@ class AlertIntegrationTester:
 
     async def _test_batch_email(self, batch_params: dict[str, Any]):
         """Test batch email notification."""
-        items_html = (
+        (
             "<ul>"
             + "".join(
                 [

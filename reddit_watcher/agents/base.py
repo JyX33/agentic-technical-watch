@@ -126,7 +126,7 @@ class BaseA2AAgent(ABC):
             Dictionary containing health status information
         """
         health = self.health_monitor.get_service_health()
-        return {
+        base_health = {
             "agent_type": self.agent_type,
             "status": health.overall_status.value,
             "uptime_seconds": time.time() - self.start_time,
@@ -134,6 +134,15 @@ class BaseA2AAgent(ABC):
             "health_checks": health.to_dict(),
             "metrics_available": True,
         }
+
+        # Add agent-specific health information
+        try:
+            agent_specific = await self.get_agent_specific_health()
+            base_health.update(agent_specific)
+        except Exception as e:
+            base_health["agent_specific_error"] = str(e)
+
+        return base_health
 
     @abstractmethod
     async def get_agent_specific_health(self) -> dict[str, Any]:
@@ -240,16 +249,6 @@ class BaseA2AAgent(ABC):
         """
         agent_card = self.generate_agent_card()
         return json.dumps(agent_card.model_dump(), indent=2)
-
-    @abstractmethod
-    def get_health_status(self) -> dict[str, Any]:
-        """
-        Get the health status of the agent.
-
-        Returns:
-            Dictionary containing health status information
-        """
-        pass
 
     def get_common_health_status(self) -> dict[str, Any]:
         """

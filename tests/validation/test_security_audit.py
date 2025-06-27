@@ -455,7 +455,7 @@ class SecurityAuditor:
                 requests_sent = 0
                 rate_limited = False
 
-                for i in range(20):  # Send 20 rapid requests
+                for _i in range(20):  # Send 20 rapid requests
                     async with session.get(f"{base_url}/health", timeout=5) as response:
                         requests_sent += 1
                         if response.status == 429:  # Too Many Requests

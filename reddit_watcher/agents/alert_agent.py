@@ -943,20 +943,80 @@ Reddit Technical Watcher
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
-    def get_health_status(self) -> dict[str, Any]:
-        """Get agent health status."""
-        status = self.get_common_health_status()
-        status.update(
-            {
-                "notification_channels": {
-                    "slack": self.config.has_slack_webhook(),
-                    "email": self.config.has_smtp_config(),
-                },
-                "email_recipients_count": len(self.config.email_recipients),
-                "delivery_cache_size": len(self._delivery_hashes),
-            }
-        )
-        return status
+    async def get_agent_specific_health(self) -> dict[str, Any]:
+        """Get alert-specific health information."""
+        alert_health = {
+            "notification_channels": {
+                "slack": self.config.has_slack_webhook(),
+                "email": self.config.has_smtp_config(),
+            },
+            "email_recipients_count": len(self.config.email_recipients),
+            "delivery_cache_size": len(self._delivery_hashes),
+        }
+
+        # Check Slack connectivity
+        slack_connectivity = {
+            "status": "unknown",
+            "configured": self.config.has_slack_webhook(),
+            "last_check": None,
+            "error": None,
+        }
+
+        if self.config.has_slack_webhook():
+            try:
+                session = await self._ensure_http_session()
+                # Send a test ping (empty payload)
+                async with session.post(
+                    self.config.slack_webhook_url,
+                    json={"text": ""},
+                ) as response:
+                    slack_connectivity["status"] = (
+                        "connected" if response.status in [200, 400] else "error"
+                    )
+                    slack_connectivity["last_check"] = datetime.now(UTC).isoformat()
+                    if response.status not in [200, 400]:
+                        slack_connectivity["error"] = f"HTTP {response.status}"
+            except Exception as e:
+                slack_connectivity["status"] = "failed"
+                slack_connectivity["error"] = str(e)
+                slack_connectivity["last_check"] = datetime.now(UTC).isoformat()
+        else:
+            slack_connectivity["status"] = "not_configured"
+
+        alert_health["slack_connectivity"] = slack_connectivity
+
+        # Check SMTP connectivity
+        smtp_connectivity = {
+            "status": "unknown",
+            "configured": self.config.has_smtp_config(),
+            "last_check": None,
+            "error": None,
+        }
+
+        if self.config.has_smtp_config():
+            try:
+                # Test SMTP connection asynchronously
+                smtp_status = await asyncio.to_thread(self._test_smtp_connection)
+                smtp_connectivity["status"] = smtp_status
+                smtp_connectivity["last_check"] = datetime.now(UTC).isoformat()
+            except Exception as e:
+                smtp_connectivity["status"] = "failed"
+                smtp_connectivity["error"] = str(e)
+                smtp_connectivity["last_check"] = datetime.now(UTC).isoformat()
+        else:
+            smtp_connectivity["status"] = "not_configured"
+
+        alert_health["smtp_connectivity"] = smtp_connectivity
+
+        # Check notification queues
+        alert_health["notification_queues"] = {
+            "delivery_history_size": len(getattr(self, "_delivery_history", [])),
+            "retry_queue_size": len(getattr(self, "_retry_history", [])),
+            "permanent_failures": len(getattr(self, "_permanent_failures", [])),
+            "deduplication_cache_size": len(self._delivery_hashes),
+        }
+
+        return alert_health
 
 
 if __name__ == "__main__":
@@ -965,8 +1025,11 @@ if __name__ == "__main__":
     from .server import A2AAgentServer
 
     async def main():
-        agent = AlertAgent()
-        server = A2AAgentServer(agent)
+        from ..config import get_settings
+
+        config = get_settings()
+        agent = AlertAgent(config)
+        server = A2AAgentServer(agent, config)
         await server.start_server()
 
     asyncio.run(main())

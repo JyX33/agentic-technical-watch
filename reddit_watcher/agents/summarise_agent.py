@@ -6,6 +6,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 import google.generativeai as genai
@@ -430,26 +431,68 @@ Summary:"""
                 "content_type": parameters.get("content_type", "unknown"),
             }
 
-    def get_health_status(self) -> dict[str, Any]:
-        """Get the health status of the SummariseAgent."""
-        status = self.get_common_health_status()
+    async def get_agent_specific_health(self) -> dict[str, Any]:
+        """Get summarise-specific health information."""
+        summarise_health = {
+            "gemini_initialized": self._gemini_initialized,
+            "spacy_available": self._nlp_model is not None,
+            "rate_limit_requests_made": self._rate_limit_state.requests_made,
+            "rate_limit_window_remaining": max(
+                0, 60 - (time.time() - self._rate_limit_state.window_start)
+            ),
+            "primary_model": self.config.gemini_model_primary,
+            "fallback_model": self.config.gemini_model_fallback,
+            "max_requests_per_minute": self._rate_limit_state.max_requests_per_minute,
+        }
 
-        # Add agent-specific health information
-        status.update(
-            {
-                "gemini_initialized": self._gemini_initialized,
-                "spacy_available": self._nlp_model is not None,
-                "rate_limit_requests_made": self._rate_limit_state.requests_made,
-                "rate_limit_window_remaining": max(
-                    0, 60 - (time.time() - self._rate_limit_state.window_start)
-                ),
-                "primary_model": self.config.gemini_model_primary,
-                "fallback_model": self.config.gemini_model_fallback,
-                "max_requests_per_minute": self._rate_limit_state.max_requests_per_minute,
-            }
-        )
+        # Check Gemini API connectivity
+        gemini_connectivity = {"status": "unknown", "last_check": None, "error": None}
 
-        return status
+        if self._gemini_initialized:
+            try:
+                # Test Gemini connectivity with a simple request
+                test_summary = await self._summarize_with_gemini(
+                    "Test content for health check", use_fallback_model=False
+                )
+                if test_summary:
+                    gemini_connectivity["status"] = "connected"
+                    gemini_connectivity["primary_model_working"] = True
+                else:
+                    # Try fallback model
+                    test_summary_fallback = await self._summarize_with_gemini(
+                        "Test content for health check", use_fallback_model=True
+                    )
+                    if test_summary_fallback:
+                        gemini_connectivity["status"] = "connected"
+                        gemini_connectivity["primary_model_working"] = False
+                        gemini_connectivity["fallback_model_working"] = True
+                    else:
+                        gemini_connectivity["status"] = "failed"
+                        gemini_connectivity["error"] = (
+                            "Both primary and fallback models failed"
+                        )
+
+                gemini_connectivity["last_check"] = datetime.now(UTC).isoformat()
+            except Exception as e:
+                gemini_connectivity["status"] = "failed"
+                gemini_connectivity["error"] = str(e)
+                gemini_connectivity["last_check"] = datetime.now(UTC).isoformat()
+        else:
+            gemini_connectivity["status"] = "not_initialized"
+            gemini_connectivity["error"] = "Gemini API key not configured"
+
+        summarise_health["gemini_connectivity"] = gemini_connectivity
+
+        # Check summarization status
+        summarise_health["summarization_status"] = {
+            "ai_models_available": self._gemini_initialized,
+            "extractive_fallback_available": True,  # Always available
+            "spacy_model_loaded": self._nlp_model is not None,
+            "chunk_processing_enabled": True,
+            "max_chunk_size": 8000,
+        }
+
+        return summarise_health
 
 
 if __name__ == "__main__":
@@ -458,8 +501,11 @@ if __name__ == "__main__":
     from .server import A2AAgentServer
 
     async def main():
-        agent = SummariseAgent()
-        server = A2AAgentServer(agent)
+        from ..config import get_settings
+
+        config = get_settings()
+        agent = SummariseAgent(config)
+        server = A2AAgentServer(agent, config)
         await server.start_server()
 
     asyncio.run(main())

@@ -716,10 +716,8 @@ class FilterAgent(BaseA2AAgent):
             "filter_reason": filter_reason,
         }
 
-    def get_health_status(self) -> dict[str, Any]:
-        """Get detailed health status for this agent."""
-        base_health = self.get_common_health_status()
-
+    async def get_agent_specific_health(self) -> dict[str, Any]:
+        """Get filter-specific health information."""
         filter_health = {
             "semantic_model_initialized": self._semantic_model is not None,
             "cached_topic_embeddings": len(self._topic_embeddings),
@@ -727,10 +725,13 @@ class FilterAgent(BaseA2AAgent):
             "relevance_threshold": self.config.relevance_threshold,
         }
 
+        # Check semantic model status
         if self._semantic_model:
             try:
                 # Quick model test
-                test_result = self._semantic_model.encode(["test"])
+                test_result = await asyncio.to_thread(
+                    self._semantic_model.encode, ["test sentence"]
+                )
                 filter_health["model_status"] = "operational"
                 filter_health["embedding_dimension"] = len(test_result[0])
             except Exception as e:
@@ -739,8 +740,42 @@ class FilterAgent(BaseA2AAgent):
         else:
             filter_health["model_status"] = "not_initialized"
 
-        base_health["filter_specific"] = filter_health
-        return base_health
+        # Check processing queues status
+        try:
+            with get_db_session() as session:
+                # Count pending content to filter
+                pending_posts = (
+                    session.query(RedditPost)
+                    .outerjoin(ContentFilter)
+                    .filter(ContentFilter.id.is_(None))
+                    .count()
+                )
+                pending_comments = (
+                    session.query(RedditComment)
+                    .outerjoin(ContentFilter)
+                    .filter(ContentFilter.id.is_(None))
+                    .count()
+                )
+
+                filter_health["processing_queues"] = {
+                    "status": "operational",
+                    "pending_posts": pending_posts,
+                    "pending_comments": pending_comments,
+                    "queue_backlog": pending_posts + pending_comments,
+                }
+        except Exception as e:
+            filter_health["processing_queues"] = {"status": "error", "error": str(e)}
+
+        # Check filter criteria status
+        filter_health["filter_criteria"] = {
+            "keyword_matching": "enabled",
+            "semantic_similarity": "enabled" if self._semantic_model else "disabled",
+            "combined_scoring": True,
+            "keyword_weight": 0.7,
+            "semantic_weight": 0.3,
+        }
+
+        return filter_health
 
 
 if __name__ == "__main__":
@@ -749,8 +784,11 @@ if __name__ == "__main__":
     from .server import A2AAgentServer
 
     async def main():
-        agent = FilterAgent()
-        server = A2AAgentServer(agent)
+        from ..config import get_settings
+
+        config = get_settings()
+        agent = FilterAgent(config)
+        server = A2AAgentServer(agent, config)
         await server.start_server()
 
     asyncio.run(main())

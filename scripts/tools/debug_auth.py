@@ -22,7 +22,7 @@ def debug_auth():
     config.a2a_api_key = "test-security-simple-key-xyz789"
     print(f"After manual set - Config a2a_api_key: '{config.a2a_api_key}'")
 
-    auth = AuthMiddleware(config)
+    AuthMiddleware(config)
 
     # Test token matching
     test_token = "test-security-simple-key-xyz789"

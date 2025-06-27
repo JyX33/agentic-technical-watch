@@ -470,7 +470,7 @@ class TestIntegrationScenarios:
 
         # Test integration with missing data
         integration = get_observability_integration()
-        health = integration.get_system_health()  # Should work even with no agents
+        integration.get_system_health()  # Should work even with no agents
 
         assert True  # If we get here, error handling worked
 

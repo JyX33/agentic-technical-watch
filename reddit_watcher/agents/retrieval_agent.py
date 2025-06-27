@@ -625,10 +625,8 @@ class RetrievalAgent(BaseA2AAgent):
             logger.error(f"Unexpected error during subreddit info fetch: {e}")
             raise
 
-    def get_health_status(self) -> dict[str, Any]:
-        """Get detailed health status for this agent."""
-        base_health = self.get_common_health_status()
-
+    async def get_agent_specific_health(self) -> dict[str, Any]:
+        """Get retrieval-specific health information."""
         retrieval_health = {
             "reddit_client_initialized": self._reddit_client is not None,
             "reddit_credentials": self.config.has_reddit_credentials(),
@@ -639,8 +637,35 @@ class RetrievalAgent(BaseA2AAgent):
         if self._reddit_client:
             retrieval_health["reddit_read_only"] = self._reddit_client.read_only
 
-        base_health["retrieval_specific"] = retrieval_health
-        return base_health
+        # Check Reddit API connectivity
+        reddit_connectivity = {"status": "unknown", "last_check": None, "error": None}
+
+        if self._reddit_client:
+            try:
+                # Test API connectivity with a simple request
+                await asyncio.to_thread(self._test_reddit_connectivity)
+                reddit_connectivity["status"] = "connected"
+                reddit_connectivity["last_check"] = datetime.now(UTC).isoformat()
+            except Exception as e:
+                reddit_connectivity["status"] = "failed"
+                reddit_connectivity["error"] = str(e)
+                reddit_connectivity["last_check"] = datetime.now(UTC).isoformat()
+        else:
+            reddit_connectivity["status"] = "not_initialized"
+
+        retrieval_health["reddit_connectivity"] = reddit_connectivity
+
+        # Check rate limit status
+        current_time = datetime.now(UTC)
+        time_since_last = (current_time - self._last_request_time).total_seconds()
+
+        retrieval_health["rate_limiting"] = {
+            "time_since_last_request": time_since_last,
+            "ready_for_request": time_since_last >= self._min_request_interval,
+            "wait_time_seconds": max(0, self._min_request_interval - time_since_last),
+        }
+
+        return retrieval_health
 
 
 if __name__ == "__main__":
@@ -649,8 +674,11 @@ if __name__ == "__main__":
     from .server import A2AAgentServer
 
     async def main():
-        agent = RetrievalAgent()
-        server = A2AAgentServer(agent)
+        from ..config import get_settings
+
+        config = get_settings()
+        agent = RetrievalAgent(config)
+        server = A2AAgentServer(agent, config)
         await server.start_server()
 
     asyncio.run(main())

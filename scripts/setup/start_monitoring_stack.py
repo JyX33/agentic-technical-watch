@@ -258,7 +258,7 @@ class MonitoringStackManager:
         """Check if workflows are stale."""
         try:
             metrics = self.observability.get_business_metrics()
-            last_completion = metrics["processing_metrics"]["last_workflow_completion"]
+            metrics["processing_metrics"]["last_workflow_completion"]
             # Check if last completion was more than 6 hours ago
             # Implementation would parse timestamp and compare
             return False  # Simplified for now

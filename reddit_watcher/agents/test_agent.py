@@ -105,21 +105,37 @@ class MockA2AAgent(BaseA2AAgent):
             },
         }
 
-    def get_health_status(self) -> dict[str, Any]:
-        """Get the health status of the test agent."""
-        health = self.get_common_health_status()
-        health.update(
-            {
-                "skills": [skill.name for skill in self.get_skills()],
-                "test_mode": True,
-                "capabilities": {
-                    "echo": True,
-                    "health_check": True,
-                    "reddit_topics": True,
-                },
-            }
-        )
-        return health
+    async def get_agent_specific_health(self) -> dict[str, Any]:
+        """Get test agent-specific health information."""
+        test_health = {
+            "skills": [skill.name for skill in self.get_skills()],
+            "test_mode": True,
+            "capabilities": {
+                "echo": True,
+                "health_check": True,
+                "reddit_topics": True,
+            },
+        }
+
+        # Test basic functionality
+        test_health["basic_tests"] = {
+            "skill_enumeration": "passed",
+            "configuration_access": "passed"
+            if hasattr(self.config, "reddit_topics")
+            else "failed",
+            "echo_functionality": "available",
+            "health_check_functionality": "available",
+        }
+
+        # Test agent health status
+        test_health["agent_status"] = {
+            "initialized": True,
+            "event_loop_accessible": True,
+            "configuration_loaded": self.config is not None,
+            "skills_registered": len(self.get_skills()) > 0,
+        }
+
+        return test_health
 
 
 def main():

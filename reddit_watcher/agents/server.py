@@ -52,25 +52,31 @@ class A2AServiceDiscovery:
             self.logger.error(f"Failed to initialize service discovery: {e}")
             raise
 
-    async def register_agent(self, agent: BaseA2AAgent) -> None:
+    async def register_agent(
+        self, agent: BaseA2AAgent, agent_port: int | None = None
+    ) -> None:
         """
         Register an agent in the service discovery registry.
 
         Args:
             agent: The agent to register
+            agent_port: Optional specific port for this agent (overrides config default)
         """
         if not self.redis_client:
             raise RuntimeError("Service discovery not initialized")
 
         try:
+            # Use provided agent_port or fall back to config default
+            port = agent_port if agent_port is not None else self.config.a2a_port
+
             agent_info = {
                 "name": agent.name,
                 "type": agent.agent_type,
                 "description": agent.description,
                 "version": agent.version,
-                "service_url": f"http://localhost:{self.config.a2a_port}",
-                "health_endpoint": f"http://localhost:{self.config.a2a_port}/health",
-                "agent_card_endpoint": f"http://localhost:{self.config.a2a_port}/.well-known/agent.json",
+                "service_url": f"http://localhost:{port}",
+                "health_endpoint": f"http://localhost:{port}/health",
+                "agent_card_endpoint": f"http://localhost:{port}/.well-known/agent.json",
                 "last_seen": str(asyncio.get_event_loop().time()),
             }
 
@@ -186,10 +192,46 @@ class A2AAgentServer:
         self.app: FastAPI | None = None
         self.logger = logging.getLogger(f"{__name__}.{agent.agent_type}")
 
+        # Determine the port for this specific agent type
+        self._agent_port = self._get_agent_port(agent.agent_type)
+
+    def _get_agent_port(self, agent_type: str) -> int:
+        """
+        Get the correct port for a specific agent type.
+
+        Args:
+            agent_type: The type of agent (coordinator, retrieval, filter, summarise, alert)
+
+        Returns:
+            Port number for the agent
+        """
+        from urllib.parse import urlparse
+
+        # Map agent types to their configured URL settings
+        agent_url_mapping = {
+            "coordinator": self.config.coordinator_agent_url,
+            "retrieval": self.config.retrieval_agent_url,
+            "filter": self.config.filter_agent_url,
+            "summarise": self.config.summarise_agent_url,
+            "alert": self.config.alert_agent_url,
+        }
+
+        agent_url = agent_url_mapping.get(agent_type)
+        if agent_url:
+            parsed_url = urlparse(agent_url)
+            if parsed_url.port:
+                return parsed_url.port
+
+        # Fallback to default port if agent type is unknown or URL doesn't have port
+        self.logger.warning(
+            f"No specific port configured for agent type '{agent_type}', using default port {self.config.a2a_port}"
+        )
+        return self.config.a2a_port
+
     async def __aenter__(self):
         """Async context manager entry."""
         await self.discovery.initialize()
-        await self.discovery.register_agent(self.agent)
+        await self.discovery.register_agent(self.agent, self._agent_port)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -225,7 +267,7 @@ class A2AAgentServer:
         try:
             # Startup
             await self.discovery.initialize()
-            await self.discovery.register_agent(self.agent)
+            await self.discovery.register_agent(self.agent, self._agent_port)
 
             # A2A executor will be created during app creation
 
@@ -304,7 +346,7 @@ class A2AAgentServer:
         async def health_check():
             """Health check endpoint for service monitoring."""
             try:
-                health_status = self.agent.get_health_status()
+                health_status = await self.agent.get_health_status()
                 await self.discovery.update_health(self.agent.agent_type)
                 return JSONResponse(content=health_status)
             except Exception as e:
@@ -577,7 +619,7 @@ class A2AAgentServer:
             config = uvicorn.Config(
                 app,
                 host=self.config.a2a_host,
-                port=self.config.a2a_port,
+                port=self._agent_port,
                 log_level="info",
                 access_log=True,
             )
@@ -595,7 +637,7 @@ class A2AAgentServer:
 
             self.logger.info(
                 f"Starting A2A server for {self.agent.name} on "
-                f"http://{self.config.a2a_host}:{self.config.a2a_port}"
+                f"http://{self.config.a2a_host}:{self._agent_port}"
             )
 
             await server.serve()

@@ -179,7 +179,7 @@ class MigrationSafetyToolkit:
                 return False
 
             # Perform rollback
-            result = subprocess.run(
+            subprocess.run(
                 ["uv", "run", "alembic", "downgrade", target_revision], check=True
             )
 

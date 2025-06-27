@@ -230,7 +230,7 @@ class SecurityValidator:
             requests_sent = 0
             rate_limited = False
 
-            for i in range(20):  # Send 20 rapid requests
+            for _i in range(20):  # Send 20 rapid requests
                 async with self.session.get(
                     f"{self.base_url}/health", timeout=5
                 ) as response:
